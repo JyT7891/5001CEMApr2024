@@ -3,6 +3,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter.ttk import Combobox
 from tkinter import messagebox
+import subprocess
 
 patient_sign_up = tk.Tk()
 
@@ -31,9 +32,11 @@ def check_sign_up():
     else:
         # if all correct
         messagebox.showinfo("Success", "Sign up successful!")
+        patient_sign_up.after(2000, lambda: subprocess.run(
+            ["python", "login_page.py"]))  # Wait for 2000 milliseconds (2 seconds) before running login_page.py
 
 
-def sign_up():
+def sign():
     # username, email, password, gender, age, blood type
     global insert_username, insert_password, insert_email
     username = Label(patient_sign_up, text="Username     : ", font=('Arial', 20))
@@ -71,5 +74,5 @@ def sign_up():
     patient_sign_up.bind("<Return>", check_sign_up)
 
 
-sign_up()
+sign()
 patient_sign_up.mainloop()
