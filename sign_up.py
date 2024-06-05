@@ -32,6 +32,7 @@ def check_sign_up():
     else:
         # if all correct
         messagebox.showinfo("Success", "Sign up successful!")
+        patient_sign_up.withdraw()
         patient_sign_up.after(2000, lambda: subprocess.run(
             ["python", "login_page.py"]))  # Wait for 2000 milliseconds (2 seconds) before running login_page.py
 
@@ -39,7 +40,7 @@ def check_sign_up():
 def sign():
     # username, email, password, gender, age, blood type
     global insert_username, insert_password, insert_email
-    username = Label(patient_sign_up, text="Username     : ", font=('Arial', 20))
+    username = Label(patient_sign_up, text="Name            : ", font=('Arial', 20))
     username.place(x=230, y=190)
     insert_username = Entry(patient_sign_up, width=30, font='Arial 19')
     insert_username.place(x=380, y=190)
