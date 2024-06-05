@@ -24,19 +24,21 @@ def check_login():
     # print("Username:", username1)
     # password1 = insert_password.get()
     # if correct run into homepage
-    patient_login.destroy()
-    patient_login.after(2000, lambda: subprocess.run(["python", "home_page.py"]))
+    patient_login.withdraw()
+    subprocess.run(["python", "home_page.py"])
 
     # else sign up page
 
 
 def check_sign_up():
-    patient_login.after(1000, lambda: subprocess.run(["python", "sign_up.py"]))
+    patient_login.withdraw()
+    # Close the current Tkinter window
+    patient_login.after(2000, lambda: subprocess.run(["python", "sign_up.py"]))
 
 
 def login_page():
     global insert_username, insert_password
-    username = Label(patient_login, text="Username    : ", font=('Arial', 20))
+    username = Label(patient_login, text="Email           : ", font=('Arial', 20))
     username.place(x=230, y=310)
     insert_username = Entry(patient_login, width=30, font='Arial 19')
     insert_username.place(x=380, y=310)
