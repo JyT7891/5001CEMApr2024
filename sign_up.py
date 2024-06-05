@@ -38,10 +38,10 @@ def check_sign_up():
 
 
 def sign():
-    # username, email, password, gender, age, blood type
+    # name, email, password, gender, age, blood type
     global insert_username, insert_password, insert_email
-    username = Label(patient_sign_up, text="Name            : ", font=('Arial', 20))
-    username.place(x=230, y=190)
+    name = Label(patient_sign_up, text="Name            : ", font=('Arial', 20))
+    name.place(x=230, y=190)
     insert_username = Entry(patient_sign_up, width=30, font='Arial 19')
     insert_username.place(x=380, y=190)
 

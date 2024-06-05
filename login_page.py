@@ -37,11 +37,11 @@ def check_sign_up():
 
 
 def login_page():
-    global insert_username, insert_password
-    username = Label(patient_login, text="Email           : ", font=('Arial', 20))
-    username.place(x=230, y=310)
-    insert_username = Entry(patient_login, width=30, font='Arial 19')
-    insert_username.place(x=380, y=310)
+    global insert_email, insert_password
+    email = Label(patient_login, text="Email           : ", font=('Arial', 20))
+    email.place(x=230, y=310)
+    insert_email = Entry(patient_login, width=30, font='Arial 19')
+    insert_email.place(x=380, y=310)
 
     password = Label(patient_login, text="Password    : ", font=('Arial', 20))
     password.place(x=230, y=410)
