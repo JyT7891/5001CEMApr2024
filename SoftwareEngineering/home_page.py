@@ -1,4 +1,9 @@
 from tkinter import *
+from tkinter.ttk import Treeview
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+# from login_page import check_login
 from run_script import run_script1
 
 # Initialize the main window
@@ -7,14 +12,19 @@ home_page.minsize(1000, 790)
 home_page.resizable(False, False)
 home_page.title("Call A Doctor")
 
+# Initialize the Firebase Admin SDK
+cred = credentials.Certificate('C:/Users/behxi/PycharmProjects/Software/call-a-doctor.json')
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+
 
 # Define button events
 def on_enter(event):
-    event.widget.config(width=20, height=2, font=('Helvetica', 12, 'bold'))
+    event.widget.config(width=19, height=2, font=('Helvetica', 12, 'bold'))
 
 
 def on_leave(event):
-    event.widget.config(width=15, height=2, font=('Helvetica', 10))
+    event.widget.config(width=20, height=2, font=('Helvetica', 10))
 
 
 def on_click(event):
@@ -32,30 +42,41 @@ def open_home(event=None):
         widget.destroy()
 
     # Display the home page content
-    welcome = Label(content_area, text="Welcome to Call A Doctor - Your Partner in Health",  background='white', font=('Helvetica', 25, 'bold'), )
+    welcome = Label(content_area, text="Welcome to Call A Doctor - Your Partner in Health", background='white',
+                    font=('Helvetica', 25, 'bold'), )
     welcome.pack()
     about_us_frame()
+    # detail = check_login()  # Get the username/email
     patient_information()
 
 
 def patient_information():
+
     patient_frame = Frame(content_area, background='white')
     patient_frame.pack(padx=50, pady=20)
+
 
     # take from database
     # name or username
     patient_profile = Label(patient_frame, text="Profile", font=('Helvetica', 30, 'bold'), background='white')
     patient_profile.pack()
 
-    # take from database
-    patient_name = Label(patient_frame, text="Name                                         ", font=('Helvetica', 20), background='white')
-    patient_name.pack(side=LEFT)
+    # Display patient profile information in a table
+    tree = Treeview(patient_frame, show='headings', height=3)
+    tree.pack(side='left')
 
-    # take from database
-    patient_age = Label(patient_frame, text="Age                                         ", font=('Helvetica', 20), background='white')
-    patient_age.pack(side=LEFT)
-
-
+    # Insert patient data into the table
+    tree.insert('', 'end', values=("Name: " + 'name',
+                                   "Age: " + 'age',
+                                   "Blood Type: " + 'blood_type',
+                                   "Gender: " + 'gender'))
+    """
+    # Insert patient data into the table
+    tree.insert('', 'end', values=(patient_info.get('name'),
+                                   patient_info.get('age'),
+                                   patient_info.get('blood_type'),
+                                   patient_info.get('gender')))
+    """
 
 
 def about_us_frame():
