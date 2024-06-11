@@ -1,9 +1,6 @@
 from tkinter import *
-from tkinter.ttk import Treeview
-from fire_base import initializeFirebase,getClient
-
-# from login_page import check_login
-from run_script import run_script1
+import os
+import subprocess
 
 # Initialize the main window
 home_page = Tk()
@@ -11,18 +8,14 @@ home_page.minsize(1000, 790)
 home_page.resizable(False, False)
 home_page.title("Call A Doctor")
 
-# Initialize the Firebase Admin SDK
-conn = initializeFirebase()
-db = getClient()
-
 
 # Define button events
 def on_enter(event):
-    event.widget.config(width=19, height=2, font=('Helvetica', 12, 'bold'))
+    event.widget.config(width=20, height=2, font=('Helvetica', 12, 'bold'))
 
 
 def on_leave(event):
-    event.widget.config(width=20, height=2, font=('Helvetica', 10))
+    event.widget.config(width=15, height=2, font=('Helvetica', 10))
 
 
 def on_click(event):
@@ -33,6 +26,7 @@ def on_release(event):
     event.widget.config(bg="SystemButtonFace")
 
 
+# choose clinic,
 # Define button command functions
 def open_home(event=None):
     # Clear the content area
@@ -40,42 +34,20 @@ def open_home(event=None):
         widget.destroy()
 
     # Display the home page content
-    welcome = Label(content_area, text="Welcome to Call A Doctor - Your Partner in Health", background='white',
-                    font=('Helvetica', 25, 'bold'), )
+    welcome = Label(content_area, text="Welcome to Call A Doctor - Your Partner in Health")
     welcome.pack()
     about_us_frame()
-    # detail = check_login()  # Get the username/email
-    patient_information()
 
 
 def patient_information():
-
-    patient_frame = Frame(content_area, background='white')
+    patient_frame = Frame(content_area)
     patient_frame.pack(padx=50, pady=20)
 
+    patient_name = Label(content_area, text="Name", font=('Helvetica', 30))
+    patient_name.pack()
 
-    # take from database
-    # name or username
-    patient_profile = Label(patient_frame, text="Profile", font=('Helvetica', 30, 'bold'), background='white')
-    patient_profile.pack()
-
-    # Display patient profile information in a table
-    tree = Treeview(patient_frame, show='headings', height=3)
-    tree.pack(side='left')
-
-    # Insert patient data into the table
-    tree.insert('', 'end', values=("Name: " + 'name',
-                                   "Age: " + 'age',
-                                   "Blood Type: " + 'blood_type',
-                                   "Gender: " + 'gender'))
-    """
-    # Insert patient data into the table
-    tree.insert('', 'end', values=(patient_info.get('name'),
-                                   patient_info.get('age'),
-                                   patient_info.get('blood_type'),
-                                   patient_info.get('gender')))
-    """
-
+    patient_age = Label(content_area, text="Age", font=('Helvetica', 30))
+    patient_age.pack()
 
 def about_us_frame():
     about_frame = Frame(content_area)
@@ -94,7 +66,7 @@ def about_us_frame():
         For any inquiries or assistance, please feel free to contact us.
         """
 
-    about_label = Label(about_frame, text=about_text, justify=LEFT, background='#ADD8E6', font=('Helvetica', 15))
+    about_label = Label(about_frame, text=about_text, justify=LEFT, background='#ADD8E6')
     about_label.pack()
 
 
@@ -140,8 +112,11 @@ def open_profile():
 
 def log_out():
     # Clear the content area
-    home_page.destroy()
-    run_script1('login_page.py')
+    for widget in content_area.winfo_children():
+        widget.destroy()
+        home_page.destroy()
+
+    subprocess.run(["python", "login_page.py"])
 
 
 # Create a Frame for the sidebar
@@ -152,6 +127,7 @@ sidebar.pack(fill=Y, side=LEFT)
 logo_image = PhotoImage(file="cad1.png")
 logo_label = Label(sidebar, image=logo_image, bg="lavender")
 logo_label.pack(pady=10, padx=10)
+# Bind logo click to open home page
 logo_label.bind("<Button-1>", open_home)
 
 

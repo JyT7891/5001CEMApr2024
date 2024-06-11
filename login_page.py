@@ -1,8 +1,17 @@
+import subprocess
 from tkinter import *
 import tkinter as tk
+from tkinter import messagebox
 from PIL import Image, ImageTk
-import subprocess
+from fire_base import getClient, initializeFirebase
+# Import the function from run_script.py
+from run_script import run_script1
 
+# Initialize the Firebase Admin SDK
+conn = initializeFirebase()
+db = getClient()
+
+# Create the main Tkinter window
 patient_login = tk.Tk()
 
 # y,x
@@ -18,33 +27,72 @@ image_label = tk.Label(patient_login, image=image)
 image_label.place(x=220, y=-180)
 
 
-def check_login():
-    # check username and password
-    # username1 = insert_username.get()  # Get the text from the username field
-    # print("Username:", username1)
-    # password1 = insert_password.get()
-    # if correct run into homepage
-    patient_login.withdraw()
-    subprocess.run(["python", "home_page.py"])
+# Function to check if an email exists in Firestore
+def email_exists_in_firestore(username1):
+    try:
+        doc_ref = db.collection('user').document(username1)  # Adjust the path as per your Firestore structure
+        doc = doc_ref.get()
+        return doc.exists
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
 
-    # else sign up page
+
+def password_matches(username1, password):
+    try:
+        doc_ref = db.collection('user').document(username1)  # Adjust the path as per your Firestore structure
+        doc = doc_ref.get()
+        if doc.exists:
+            user_data = doc.to_dict()
+            return user_data.get('password') == password
+        else:
+            doc_ref = db.collection('doctor').document(username1)  # Adjust the path as per your Firestore structure
+            doc = doc_ref.get()
+            if doc.exists:
+                user_data = doc.to_dict()
+                return user_data.get('password') == password
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
 
 
+# Function to handle login process
+def check_login(event=None):
+    username1 = insert_username.get()
+    password = insert_password.get()
+
+    if email_exists_in_firestore(username1):
+        if password_matches(username1, password):
+            messagebox.showinfo("Login Successful", "Login successful!")
+            # Close the current Tkinter window
+            patient_login.destroy()
+            run_script1('home_page.py')
+            # subprocess.run(["python", "home_page.py"])
+        else:
+            messagebox.showerror("Login Failed", "Incorrect email or password.")
+    else:
+        messagebox.showerror("Login Failed", "Email does not exist. Please sign up.")
+
+
+# Function to handle sign-up process
 def check_sign_up():
-    patient_login.withdraw()
     # Close the current Tkinter window
-    patient_login.after(2000, lambda: subprocess.run(["python", "sign_up.py"]))
+    patient_login.destroy()
+    # Call the function to run the script
+    # subprocess.run(["python", "sign_up.py"])
+    run_script1('sign_up.py')
 
 
+# Function to set up the login page
 def login_page():
-    global insert_email, insert_password
-    email = Label(patient_login, text="Email           : ", font=('Arial', 20))
-    email.place(x=230, y=310)
-    insert_email = Entry(patient_login, width=30, font='Arial 19')
-    insert_email.place(x=380, y=310)
+    global insert_username, insert_password
+    username = Label(patient_login, text="Name          : ", font=('Arial', 20))
+    username.place(x=200, y=310)
+    insert_username = Entry(patient_login, width=30, font='Arial 19')
+    insert_username.place(x=380, y=310)
 
     password = Label(patient_login, text="Password    : ", font=('Arial', 20))
-    password.place(x=230, y=410)
+    password.place(x=200, y=410)
     insert_password = Entry(patient_login, width=30, show="*", font=('Arial', 19))
     insert_password.place(x=380, y=410)
 
@@ -57,5 +105,13 @@ def login_page():
     patient_login.bind("<Return>", check_login)
 
 
-login_page()
-patient_login.mainloop()
+def main():
+    # Set up the login page
+    login_page()
+
+    # Run the Tkinter main loop
+    patient_login.mainloop()
+
+
+if __name__ == '__main__':
+    main()
