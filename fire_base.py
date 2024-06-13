@@ -7,4 +7,4 @@ def initializeFirebase():
     firebase_admin.initialize_app(cred)
 
 def getClient():
-    return firestore.client(  )
+    return firestore.client()
