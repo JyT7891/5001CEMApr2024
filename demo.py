@@ -1,164 +1,106 @@
 from tkinter import *
-import os
+import tkinter as tk
+import PIL
+from PIL import Image, ImageTk
+from tkinter.ttk import Combobox
+from tkinter import messagebox
 import subprocess
+from fire_base import getClient, initializeFirebase
 
-# Initialize the main window
-home_page = Tk()
-home_page.minsize(1000, 790)
-home_page.resizable(False, False)
-home_page.title("Call A Doctor")
+patient_sign_up = tk.Tk()
 
+# y,x
+patient_sign_up.minsize(1000, 790)
+patient_sign_up.resizable(False, False)
+patient_sign_up.title("Sign Up")
 
-# Define button events
-def on_enter(event):
-    event.widget.config(width=20, height=2, font=('Helvetica', 12, 'bold'))
+# Load and display an image
+image = PIL.Image.open('CAD.png')
+image = PIL.ImageTk.PhotoImage(image)
 
-
-def on_leave(event):
-    event.widget.config(width=15, height=2, font=('Helvetica', 10))
-
-
-def on_click(event):
-    event.widget.config(bg="blue")
+# Create a label to display the image
+image_label = Label(patient_sign_up, image=image)
+image_label.place(x=220, y=-180)
 
 
-def on_release(event):
-    event.widget.config(bg="SystemButtonFace")
+def check_sign_up():
+    # Import the function from run_script.py
+    from run_script import run_script1
+
+    # Get the values from the entry fields
+    username = insert_username.get()
+    password = insert_password.get()
+    email = insert_email.get()
+    gender = gender_type_combobox.get()
+    blood = blood_type_var.get()
+    age = insert_age.get()
+
+    # if email don't have @ error
+    if '@' not in email:
+        messagebox.showerror("Email Error", "Please check your email!")
+    else:
+        # if all correct
+        conn = initializeFirebase()
+        db = getClient()
+
+        docRef = db.collection('user').document(username)
+        docRef.set({
+            'username': username,
+            'age': age,
+            'email': email,
+            'password': password,
+            'gender': gender,
+            'bloodType': blood,
+        })
+
+        messagebox.showinfo("Success", "Sign up successful!")
+        patient_sign_up.destroy()
+        # Call the function to run the script
+        run_script1('login_page.py')
 
 
-# choose clinic,
-# Define button command functions
-def open_home(event=None):
-    # Clear the content area
-    for widget in content_area.winfo_children():
-        widget.destroy()
+def sign():
+    # name, email, password, gender, age, blood type
+    global insert_username, insert_age, insert_email, insert_password, gender_type_combobox, blood_type_var
+    name = Label(patient_sign_up, text="Name         :", font=('Arial', 20))
+    name.place(x=200, y=180)
+    insert_username = Entry(patient_sign_up, width=30, font='Arial 19')
+    insert_username.place(x=380, y=180)
 
-    # Display the home page content
-    welcome = Label(content_area, text="Welcome to Call A Doctor - Your Partner in Health")
-    welcome.pack()
-    about_us_frame()
+    age = Label(patient_sign_up, text="Age            :", font=('Arial', 20))
+    age.place(x=200, y=260)
+    insert_age = Entry(patient_sign_up, width=30, font=('Arial', 19))
+    insert_age.place(x=380, y=260)
 
+    email = Label(patient_sign_up, text="Email          :", font=('Arial', 20))
+    email.place(x=200, y=340)
+    insert_email = Entry(patient_sign_up, width=30, font=('Arial', 19))
+    insert_email.place(x=380, y=340)
 
-def patient_information():
-    patient_frame = Frame(content_area)
-    patient_frame.pack(padx=50, pady=20)
+    password = Label(patient_sign_up, text="Password    :", font=('Arial', 20))
+    password.place(x=200, y=420)
+    insert_password = Entry(patient_sign_up, width=30, font=('Arial', 19))
+    insert_password.place(x=380, y=420)
 
-    patient_name = Label(content_area, text="Name", font=('Helvetica', 30))
-    patient_name.pack()
+    gender = Label(patient_sign_up, text="Gender       :", font=('Arial', 20))
+    gender.place(x=200, y=510)
+    gender_types = ["Male", "Female"]
+    gender_type_combobox = Combobox(patient_sign_up, values=gender_types, font=('Arial', 19), state='readonly')
+    gender_type_combobox.place(x=380, y=510)
 
-    patient_age = Label(content_area, text="Age", font=('Helvetica', 30))
-    patient_age.pack()
+    blood_type = Label(patient_sign_up, text="Blood Type  :", font=('Arial', 20))
+    blood_type.place(x=200, y=600)
+    blood_types = ["A", "B", "AB", "O"]
+    blood_type_var = StringVar()
+    for i, blood_type_option in enumerate(blood_types):
+        blood_type_radio = Radiobutton(patient_sign_up, text=blood_type_option, variable=blood_type_var,
+                                       value=blood_type_option, font=('Arial', 19))
+        blood_type_radio.place(x=380 + i * 100, y=600)
 
-def about_us_frame():
-    about_frame = Frame(content_area)
-    about_frame.pack(padx=50, pady=20)
-
-    about_text = """
-        Welcome to Call A Doctor!
-
-        Call A Doctor is committed to providing high-quality healthcare services to our patients. 
-        Whether you need to search for clinics, book appointments, or manage your appointments, 
-        our platform is here to assist you every step of the way.
-
-        Our dedicated team works tirelessly to ensure that you receive the best possible care. 
-        Thank you for choosing Call A Doctor as your partner in health!
-
-        For any inquiries or assistance, please feel free to contact us.
-        """
-
-    about_label = Label(about_frame, text=about_text, justify=LEFT, background='#ADD8E6')
-    about_label.pack()
-
-
-def search_clinic():
-    # Clear the content area
-    for widget in content_area.winfo_children():
-        widget.destroy()
-
-    # Display the search clinic content
-    test = Label(content_area, text="Search Clinic")
-    test.pack()
+    submit = Button(patient_sign_up, text="Sign Up", height=2, width=30, font=('Arial', 20), command=check_sign_up)
+    submit.place(x=250, y=690)
+    patient_sign_up.bind("<Return>", check_sign_up)
 
 
-def book_appointment():
-    # Clear the content area
-    for widget in content_area.winfo_children():
-        widget.destroy()
-
-    # Display the book appointment content
-    test = Label(content_area, text="Book Appointment")
-    test.pack()
-
-
-def manage_appointment():
-    # Clear the content area
-    for widget in content_area.winfo_children():
-        widget.destroy()
-
-    # Display the manage appointment content
-    test = Label(content_area, text="Manage Appointment")
-    test.pack()
-
-
-def open_profile():
-    # Clear the content area
-    for widget in content_area.winfo_children():
-        widget.destroy()
-
-    # Display the profile content
-    test = Label(content_area, text="Profile")
-    test.pack()
-
-
-def log_out():
-    # Clear the content area
-    for widget in content_area.winfo_children():
-        widget.destroy()
-        home_page.destroy()
-
-    subprocess.run(["python", "login_page.py"])
-
-
-# Create a Frame for the sidebar
-sidebar = Frame(home_page, width=200, bg="lavender")
-sidebar.pack(fill=Y, side=LEFT)
-
-# Load and display the logo
-logo_image = PhotoImage(file="cad1.png")
-logo_label = Label(sidebar, image=logo_image, bg="lavender")
-logo_label.pack(pady=10, padx=10)
-# Bind logo click to open home page
-logo_label.bind("<Button-1>", open_home)
-
-
-# Function to create and pack buttons with events
-def create_button(text, command):
-    button = Button(sidebar, text=text, command=command, width=20, height=2, font=('Helvetica', 10))
-    button.pack(pady=20)
-    button.bind("<Enter>", on_enter)
-    button.bind("<Leave>", on_leave)
-    button.bind("<ButtonPress-1>", on_click)
-    button.bind("<ButtonRelease-1>", on_release)
-    return button
-
-
-# Main content area
-content_area = Frame(home_page, bg="white", padx=20, pady=20)
-content_area.pack(expand=True, fill="both")
-
-# Create buttons for navigation
-create_button("Search for Clinic", search_clinic)
-create_button("Book Appointment", book_appointment)
-create_button("Manage Appointment", manage_appointment)
-create_button("Profile", open_profile)
-create_button("Log Out", log_out)
-
-
-def main():
-    open_home()
-    # Run the main event loop
-    home_page.mainloop()
-
-
-if __name__ == '__main__':
-    main()
+sign()
+patient_sign_up.mainloop()

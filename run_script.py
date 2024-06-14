@@ -4,7 +4,7 @@ import os
 import sys
 
 
-def run_script1(script_name):
+def run_script1(script_name, *args):
     # Path to the Python executable in your virtual environment
     python_executable = os.path.join(os.getcwd(), '.venv', 'Scripts', 'python.exe')
 
@@ -18,7 +18,8 @@ def run_script1(script_name):
 
     # Run the script using subprocess
     try:
-        result = subprocess.run([python_executable, script_path], capture_output=True, text=True)
+        command = [python_executable, script_path] + list(args)
+        result = subprocess.run(command, capture_output=True, text=True)
         result.check_returncode()  # This will raise an exception if the script returns a non-zero exit code
         print(f"Script output:\n{result.stdout}")
     except subprocess.CalledProcessError as e:
@@ -33,8 +34,9 @@ def run_script1(script_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a Python script in a virtual environment.")
     parser.add_argument('script_name', type=str, help="The name of the script to run (e.g., 'sign_up.py').")
+    parser.add_argument('script_args', nargs=argparse.REMAINDER, help="Additional arguments to pass to the script.")
 
     args = parser.parse_args()
 
-    # Run the specified script
-    run_script1(args.script_name)
+    # Run the specified script with any additional arguments
+    run_script1(args.script_name, *args.script_args)
