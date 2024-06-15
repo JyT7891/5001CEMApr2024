@@ -1,6 +1,6 @@
 from tkinter import Tk, Frame
 from side_bar import create_button
-import home_page
+import user_home_page
 
 # Initialize the main window
 home_page = Tk()

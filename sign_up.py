@@ -1,6 +1,5 @@
 from tkinter import *
 import tkinter as tk
-
 import PIL
 from PIL import Image, ImageTk
 from tkinter.ttk import Combobox
@@ -37,6 +36,7 @@ def check_sign_up():
     age = insert_age.get()
 
     # if email don't have @ error
+    # Check Username and password
     if '@' not in email:
         messagebox.showerror("Email Error", "Please check your email!")
     else:

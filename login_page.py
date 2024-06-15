@@ -1,4 +1,3 @@
-import subprocess
 from tkinter import *
 import tkinter as tk
 from tkinter import messagebox
@@ -44,12 +43,19 @@ def password_matches(username1, password):
         doc = doc_ref.get()
         if doc.exists:
             user_data = doc.to_dict()
+            # Close the current Tkinter window
+            patient_login.destroy()
+            messagebox.showinfo("Login Successful", "Login successful!")
             return user_data.get('password') == password
         else:
             doc_ref = db.collection('doctor').document(username1)  # Adjust the path as per your Firestore structure
             doc = doc_ref.get()
             if doc.exists:
                 user_data = doc.to_dict()
+                # Close the current Tkinter window
+                patient_login.destroy()
+                run_script1('doctor_web.py')
+                messagebox.showinfo("Login Successful", "Login successful!")
                 return user_data.get('password') == password
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -63,11 +69,7 @@ def check_login(event=None):
 
     if email_exists_in_firestore(username1):
         if password_matches(username1, password):
-            messagebox.showinfo("Login Successful", "Login successful!")
-            # Close the current Tkinter window
-            patient_login.destroy()
-            run_script1('home_page.py')
-            # subprocess.run(["python", "home_page.py"])
+            run_script1('user_home_page.py', username1)
         else:
             messagebox.showerror("Login Failed", "Incorrect email or password.")
     else:
@@ -79,7 +81,6 @@ def check_sign_up():
     # Close the current Tkinter window
     patient_login.destroy()
     # Call the function to run the script
-    # subprocess.run(["python", "sign_up.py"])
     run_script1('sign_up.py')
 
 
