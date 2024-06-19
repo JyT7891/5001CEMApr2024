@@ -2,52 +2,64 @@ import tkinter as tk
 from tkinter import messagebox
 from geopy.geocoders import Nominatim
 from tkintermapview import TkinterMapView
+import sys
+from run_script import run_script1
+from fire_base import getClient, initializeFirebase
 
+# Initialize the Firebase Admin SDK
+conn = initializeFirebase()
+db = getClient()
 
-# Function to get location and show on map
-def show_location():
-    clinic_name = entry.get()
-    if not clinic_name:
+def getClinicName(clinic_id):
+    try:
+        # Fetch clinic document using clinic ID
+        clinic_doc = db.collection('clinic').document(clinic_id).get()
+        if clinic_doc.exists:
+            clinic_data = clinic_doc.to_dict()
+            return clinic_data.get('name')
+        else:
+            messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
+            return None
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        return None
+
+def show_location(clinic_id):
+    if not clinic_id:
         messagebox.showwarning("Input Error", "Please enter a clinic name.")
         return
 
-    # Example: Fetching clinic details (replace with your actual data retrieval)
-    # For demonstration, I'm using dummy data
-    clinic_details = {
-        'name': clinic_name,
-        'phone': '123-456-7890',  # Replace with actual phone number retrieval
-    }
-
-    # Geocode the clinic name
     geolocator = Nominatim(user_agent="clinic_locator")
+    clinic_name = getClinicName(clinic_id)
+
     location = geolocator.geocode(clinic_name)
-
     if location:
-        # Set the map position to the clinic's location
         map_widget.set_position(location.latitude, location.longitude)
-
-        # Add marker with clinic name and phone number
-        marker_text = f"{clinic_details['name']}\nPhone: {clinic_details['phone']}"
+        marker_text = f"{clinic_name}\nPhone: 123-456-7890"  # Replace with actual phone number if available
         map_widget.set_marker(location.latitude, location.longitude, text=marker_text)
-
-        # Adjust map zoom level (optional)
-        map_widget.set_zoom(15)  # Adjust zoom level as needed
+        map_widget.set_zoom(15)
     else:
         messagebox.showerror("Geocoding Error", "Could not find location for the clinic.")
 
+def book_now_and_close():
+    clinic_map.destroy()
+    run_script1("user_appointment.py", clinic_id)
 
-# Set up Tkinter GUI
-root = tk.Tk()
-root.title("Clinic Locator")
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python show_map.py <clinic_id>")
+        sys.exit(1)
+    clinic_id = sys.argv[1]
 
-tk.Label(root, text="Enter Clinic Name:").pack(pady=10)
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
+    clinic_map = tk.Tk()
+    clinic_map.title("Clinic Locator")
 
-tk.Button(root, text="Show Location", command=show_location).pack(pady=20)
+    tk.Label(clinic_map, text=f"Clinic ID : {getClinicName(clinic_id)}", font=('Helvetica', 25, 'bold')).pack(pady=10)
+    book_now = tk.Button(clinic_map, text="Book Now", font=('Helvetica', 10), command=book_now_and_close)
+    book_now.pack(pady=5)
 
-# Create a map widget with smaller size
-map_widget = TkinterMapView(root, width=600, height=400)
-map_widget.pack(pady=20)
+    map_widget = TkinterMapView(clinic_map, width=600, height=400)
+    map_widget.pack(pady=20)
 
-root.mainloop()
+    show_location(clinic_id)
+    clinic_map.mainloop()
