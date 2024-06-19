@@ -102,9 +102,9 @@ def initialize_home_page(username):
         # Fetch clinics from Firebase
         clinics = fetch_clinics_from_firebase()
 
-        def button_command():
+        def button_command(clinic_name):
             home_page.withdraw()
-            run_script1('show_map.py')
+            run_script1('show_map.py', clinic_name)
 
         # Create a canvas and a scrollbar
         canvas = Canvas(content_area, bg="white")
@@ -158,7 +158,7 @@ def initialize_home_page(username):
 
             # Bind the click event to the clinic frame
             clinic_frame.bind("<Button-1>",
-                              lambda event, clinic_name=clinic['name']: button_command())
+                              lambda event, clinic_name=clinic['name']: button_command(clinic_name))
 
             # Make the frame's width and height fixed
             clinic_frame.pack_propagate(False)
@@ -195,62 +195,62 @@ def initialize_home_page(username):
                                                                                                               padx=5,
                                                                                                               pady=5)
 
-            Label(profile_data_frame, text="Gender           : ", font=('Helvetica', 15), bg='white').grid(row=1, column=0,
+            Label(profile_data_frame, text="Name              : ", font=('Helvetica', 15), bg='white').grid(row=1,
+                                                                                                            column=0,
+                                                                                                            sticky='w',
+                                                                                                            padx=5,
+                                                                                                            pady=5)
+            name_entry = Entry(profile_data_frame, font=('Helvetica', 15), width=15)
+            name_entry.grid(row=1, column=1, padx=5, pady=5)
+            name_entry.insert(0, patient_info['name'])
+
+            Label(profile_data_frame, text="Gender           : ", font=('Helvetica', 15), bg='white').grid(row=2, column=0,
                                                                                                         sticky='w',
                                                                                                         padx=5,
                                                                                                         pady=5)
-            Label(profile_data_frame, text=patient_info['gender'], font=('Helvetica', 15), bg='white').grid(row=1,
+            Label(profile_data_frame, text=patient_info['gender'], font=('Helvetica', 15), bg='white').grid(row=2,
                                                                                                             column=1,
                                                                                                             sticky='w',
                                                                                                             padx=5,
                                                                                                             pady=5)
 
-            Label(profile_data_frame, text="Blood Type     : ", font=('Helvetica', 15), bg='white').grid(row=2, column=0,
+            Label(profile_data_frame, text="Blood Type     : ", font=('Helvetica', 15), bg='white').grid(row=3, column=0,
                                                                                                       sticky='w',
                                                                                                       padx=5,
                                                                                                       pady=5)
-            Label(profile_data_frame, text=patient_info['bloodType'], font=('Helvetica', 15), bg='white').grid(row=2,
-                                                                                                               column=1,
+            Label(profile_data_frame, text=patient_info['bloodType'], font=('Helvetica', 15), bg='white').grid(row=3,
+                                                                                                            column=1,
                                                                                                                sticky='w',
                                                                                                                padx=5,
                                                                                                                pady=5)
 
             # Age Label and Value
-            Label(profile_data_frame, text="Age                : ", font=('Helvetica', 15), bg='white').grid(row=3,
+            Label(profile_data_frame, text="Age                : ", font=('Helvetica', 15), bg='white').grid(row=4,
                                                                                                           column=0,
                                                                                                           sticky='w',
                                                                                                           padx=5,
                                                                                                           pady=5)
-            Label(profile_data_frame, text=patient_info['age'], font=('Helvetica', 15), bg='white').grid(row=3,
+            Label(profile_data_frame, text=patient_info['age'], font=('Helvetica', 15), bg='white').grid(row=4,
                                                                                                          column=1,
                                                                                                          sticky='w',
                                                                                                          padx=5,
                                                                                                          pady=5)
 
             # Date of Birth Labels and Values
-            Label(profile_data_frame, text="Date of Birth   : ", font=('Helvetica', 15), bg='white').grid(row=4,
+            Label(profile_data_frame, text="Date of Birth   : ", font=('Helvetica', 15), bg='white').grid(row=5,
                                                                                                           column=0,
                                                                                                           sticky='w',
                                                                                                           padx=5,
                                                                                                           pady=5)
 
             birth_date_str = f"{patient_info['year']} / {patient_info['month']} / {patient_info['day']}"
-            Label(profile_data_frame, text=birth_date_str, font=('Helvetica', 15), bg='white').grid(row=4,
+            Label(profile_data_frame, text=birth_date_str, font=('Helvetica', 15), bg='white').grid(row=5,
                                                                                                     column=1,
                                                                                                     sticky='w',
                                                                                                     padx=5,
                                                                                                     pady=5)
 
             # Entry fields for editable fields
-            Label(profile_data_frame, text="Email              : ", font=('Helvetica', 15), bg='white').grid(row=5,
-                                                                                                          column=0,
-                                                                                                          sticky='w',
-                                                                                                          padx=5,
-                                                                                                          pady=5)
-            email_entry = Entry(profile_data_frame, font=('Helvetica', 15), width=15)
-            email_entry.grid(row=5, column=1, padx=5, pady=5)
-            email_entry.insert(0, patient_info['email'])
-
             Label(profile_data_frame, text="Password       : ", font=('Helvetica', 15), bg='white').grid(row=6, column=0,
                                                                                                       sticky='w',
                                                                                                       padx=5,
@@ -260,12 +260,12 @@ def initialize_home_page(username):
             password_entry.insert(0, patient_info['password'])
 
             def update_profile():
-                new_email = email_entry.get()
+                new_name = name_entry.get()
                 new_password = password_entry.get()
 
                 # Update the profile data
                 updated_data = {
-                    'email': new_email,
+                    'name': new_name,
                     'password': new_password
                 }
 

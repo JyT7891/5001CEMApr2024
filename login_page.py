@@ -87,7 +87,7 @@ def check_sign_up():
 # Function to set up the login page
 def login_page():
     global insert_username, insert_password
-    username = Label(patient_login, text="Name          : ", font=('Arial', 20))
+    username = Label(patient_login, text="Username   : ", font=('Arial', 20))
     username.place(x=200, y=310)
     insert_username = Entry(patient_login, width=30, font='Arial 19')
     insert_username.place(x=380, y=310)

@@ -2,52 +2,44 @@ import tkinter as tk
 from tkinter import messagebox
 from geopy.geocoders import Nominatim
 from tkintermapview import TkinterMapView
+import sys
+from run_script import run_script1
 
-
-# Function to get location and show on map
-def show_location():
-    clinic_name = entry.get()
+def show_location(clinic_name):
     if not clinic_name:
         messagebox.showwarning("Input Error", "Please enter a clinic name.")
         return
 
-    # Example: Fetching clinic details (replace with your actual data retrieval)
-    # For demonstration, I'm using dummy data
-    clinic_details = {
-        'name': clinic_name,
-        'phone': '123-456-7890',  # Replace with actual phone number retrieval
-    }
-
-    # Geocode the clinic name
     geolocator = Nominatim(user_agent="clinic_locator")
     location = geolocator.geocode(clinic_name)
 
     if location:
-        # Set the map position to the clinic's location
         map_widget.set_position(location.latitude, location.longitude)
-
-        # Add marker with clinic name and phone number
-        marker_text = f"{clinic_details['name']}\nPhone: {clinic_details['phone']}"
+        marker_text = f"{clinic_name}\nPhone: 123-456-7890"
         map_widget.set_marker(location.latitude, location.longitude, text=marker_text)
-
-        # Adjust map zoom level (optional)
-        map_widget.set_zoom(15)  # Adjust zoom level as needed
+        map_widget.set_zoom(15)
     else:
         messagebox.showerror("Geocoding Error", "Could not find location for the clinic.")
 
+def book_now_and_close():
+    clinic_map.destroy()
+    run_script1("user_appointment.py", clinic_name)
 
-# Set up Tkinter GUI
-root = tk.Tk()
-root.title("Clinic Locator")
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python show_map.py <clinic_name>")
+        sys.exit(1)
+    clinic_name = sys.argv[1]
 
-tk.Label(root, text="Enter Clinic Name:").pack(pady=10)
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
+    clinic_map = tk.Tk()
+    clinic_map.title(clinic_name)
 
-tk.Button(root, text="Show Location", command=show_location).pack(pady=20)
+    tk.Label(clinic_map, text=f"Clinic Name : {clinic_name}", font=('Helvetica', 25, 'bold')).pack(pady=10)
+    book_now = tk.Button(clinic_map, text="Book Now", font=('Helvetica', 10), command=book_now_and_close)
+    book_now.pack(pady=5)
 
-# Create a map widget with smaller size
-map_widget = TkinterMapView(root, width=600, height=400)
-map_widget.pack(pady=20)
+    map_widget = TkinterMapView(clinic_map, width=600, height=400)
+    map_widget.pack(pady=20)
 
-root.mainloop()
+    show_location(clinic_name)
+    clinic_map.mainloop()

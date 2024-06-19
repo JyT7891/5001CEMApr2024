@@ -7,6 +7,7 @@ from tkinter.ttk import Combobox
 from tkinter import messagebox
 import subprocess
 from fire_base import getClient, initializeFirebase
+from run_script import run_script1
 
 patient_sign_up = tk.Tk()
 
@@ -31,8 +32,8 @@ def check_sign_up():
 
     # Get the values from the entry fields
     username = insert_username.get()
+    name = insert_name.get()
     password = insert_password.get()
-    email = insert_email.get()
     gender = gender_type_combobox.get()
     blood = blood_type_var.get()
     year = year1
@@ -40,39 +41,40 @@ def check_sign_up():
     day = day1
     age = age1
 
-    # if email don't have @ error
-    # Check Username and password
-    if '@' not in email:
-        messagebox.showerror("Email Error", "Please check your email!")
-    else:
-        # if all correct
-        conn = initializeFirebase()
-        db = getClient()
+    # if all correct
+    conn = initializeFirebase()
+    db = getClient()
 
-        docRef = db.collection('user').document(username)
-        docRef.set({
-            'username': username,
-            'age': age,
-            'email': email,
-            'password': password,
-            'gender': gender,
-            'bloodType': blood,
-            'year': year,
-            'month': month,
-            'day': day
-        })
+    docRef = db.collection('user').document(username)
+    docRef.set({
+        'username': username,
+        'name': name,
+        'age': age,
+        'password': password,
+        'gender': gender,
+        'bloodType': blood,
+        'year': year,
+        'month': month,
+        'day': day
+    })
 
-        messagebox.showinfo("Success", "Sign up successful!")
-        patient_sign_up.destroy()
-        # Call the function to run the script
-        run_script1('login_page.py')
+    messagebox.showinfo("Success", "Sign up successful!")
+    patient_sign_up.destroy()
+    # Call the function to run the script
+    run_script1('login_page.py')
+
+
+def call_back():
+    patient_sign_up.destroy()
+    # Call the function to run the script
+    run_script1('login_page.py')
 
 
 def sign():
-    # name, email, password, gender, age, blood type
-    global insert_username, insert_email, insert_password, gender_type_combobox, blood_type_var
-    name = Label(patient_sign_up, text="Name               :", font=('Arial', 20))
-    name.place(x=150, y=180)
+    # username, name, password, gender, age, blood type
+    global insert_username, insert_name, insert_password, gender_type_combobox, blood_type_var
+    username = Label(patient_sign_up, text="Username         :", font=('Arial', 20))
+    username.place(x=150, y=180)
     insert_username = Entry(patient_sign_up, width=30, font='Arial 19')
     insert_username.place(x=380, y=180)
 
@@ -81,10 +83,10 @@ def sign():
     generate_years()
     date_of_birth()
 
-    email = Label(patient_sign_up, text="Email                :", font=('Arial', 20))
-    email.place(x=150, y=340)
-    insert_email = Entry(patient_sign_up, width=30, font=('Arial', 19))
-    insert_email.place(x=380, y=340)
+    name = Label(patient_sign_up, text="Name                :", font=('Arial', 20))
+    name.place(x=150, y=340)
+    insert_name = Entry(patient_sign_up, width=30, font=('Arial', 19))
+    insert_name.place(x=380, y=340)
 
     password = Label(patient_sign_up, text="Password          :", font=('Arial', 20))
     password.place(x=150, y=420)
@@ -106,9 +108,11 @@ def sign():
                                        value=blood_type_option, font=('Arial', 19))
         blood_type_radio.place(x=380 + i * 100, y=600)
 
-    submit = Button(patient_sign_up, text="Sign Up", height=2, width=30, font=('Arial', 20), command=check_sign_up)
-    submit.place(x=250, y=690)
-    patient_sign_up.bind("<Return>", check_sign_up)
+    submit = Button(patient_sign_up, text="Sign Up", height=2, width=15, font=('Arial', 20), command=check_sign_up)
+    submit.place(x=550, y=690)
+
+    cancel = Button(patient_sign_up, text="Cancel", height=2, width=15, font=('Arial', 20), command=call_back)
+    cancel.place(x=200, y=690)
 
 
 # Function to generate years dynamically
