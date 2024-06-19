@@ -39,4 +39,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Run the specified script with any additional arguments
-    run_script1(args.script_name, *args.script_args)
