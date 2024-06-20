@@ -2,6 +2,11 @@ from tkinter import *
 from tkinter import messagebox
 from datetime import datetime
 from run_script import run_script1
+from fire_base import getClient, initializeFirebase
+
+# Initialize the Firebase Admin SDK
+conn = initializeFirebase()
+db = getClient()
 
 # Global list to store appointments
 appointments = []
@@ -13,98 +18,49 @@ doctor.minsize(1250, 790)
 doctor.resizable(False, False)
 
 
-# Function to view all appointments
-def view_appointments():
-    if not appointments:
-        messagebox.showinfo("Appointments", "No appointments found")
-        return
-
-    appointments_str = "\n".join([
-        f"{a['name']}: {a['status']} - Check-in: {a.get('check_in_time', 'N/A')} - Check-out: {a.get('check_out_time', 'N/A')}"
-        for a in appointments])
-    messagebox.showinfo("Appointments", appointments_str)
-
-
-# Variable to track doctor's availability
-doctor_available = True
-
-# Global variable for availability label
-availability_label = None
-
-
-# Function to toggle doctor's availability
-def toggle_availability():
-    global doctor_available
-    doctor_available = not doctor_available
-    availability_label.config(text=f"Doctor is {'Available' if doctor_available else 'Not Available'}")
-
-
-# Function to handle check-in process
-def check_in():
-    if not doctor_available:
-        messagebox.showerror("Error", "Doctor is not available.")
-        return
-
-    name = name_entry.get()
-    if name:
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        appointments.append({'name': name, 'status': 'Checked In', 'check_in_time': current_time})
-        messagebox.showinfo("Success", f"Checked in {name} at {current_time}")
-    else:
-        messagebox.showerror("Error", "Please enter a name")
-
-
-# Function to handle check-out process
-def check_out():
-    if not doctor_available:
-        messagebox.showerror("Error", "Doctor is not available.")
-        return
-
-    name = name_entry.get()
-    for appointment in appointments:
-        if appointment['name'] == name and appointment['status'] == 'Checked In':
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            appointment['status'] = 'Checked Out'
-            appointment['check_out_time'] = current_time
-            messagebox.showinfo("Success", f"Checked out {name} at {current_time}")
-            return
-    messagebox.showerror("Error", "No checked-in appointment found for this name")
-
-
-# Function to handle clock in/out operations
 def clock_in_out():
-    global name_entry
-    clear_content()
-
-    # Doctor availability toggle button
-    availability_button = Button(content_area, text="Toggle Availability", command=toggle_availability)
-    availability_button.pack(pady=5)
-
-    # Label to display doctor's availability status
-    availability_label = Label(content_area, text="Doctor is Available", fg="green" if doctor_available else "red")
-    availability_label.pack(pady=5)
-
-    # Patient Name Entry
-    name_label = Label(content_area, text="Doctor Name:")
-    name_label.pack()
-    name_entry = Entry(content_area)
-    name_entry.pack()
-
-    # Check-in Button
-    check_in_button = Button(content_area, text="Check In", command=check_in)
-    check_in_button.pack(pady=5)
-
-    # Check-out Button
-    check_out_button = Button(content_area, text="Check Out", command=check_out)
-    check_out_button.pack(pady=5)
+    messagebox.showinfo("Clock In/Out", "Feature under development")
 
 
 def check_appointment():
-    pass
+    clear_content()
+
+    # Example: Query appointments from Firebase Firestore
+    appointments_ref = db.collection('appointments').get()
+    appointments.clear()
+
+    for appointment in appointments_ref:
+        appointments.append(appointment.to_dict())
+
+    if appointments:
+        # Display appointments in content_area
+        for idx, appointment in enumerate(appointments, start=1):
+            appointment_text = f"Appointment {idx}: \n"
+            appointment_text += f"Patient: {appointment['patient_name']}\n"
+            appointment_text += f"Time: {appointment['appointment_time']}\n"
+            appointment_text += f"Doctor: {appointment['doctor']}\n\n"
+
+            label = Label(content_area, text=appointment_text, font=('Helvetica', 12))
+            label.pack(anchor="w", pady=10)
+    else:
+        label = Label(content_area, text="No appointments found.", font=('Helvetica', 12))
+        label.pack(anchor="w", pady=10)
 
 
 def open_profile():
-    pass
+    clear_content()
+
+    # Example: Query doctor profiles from Firebase Firestore
+    doctors_ref = db.collection('doctors').get()
+
+    for doctor in doctors_ref:
+        doctor_data = doctor.to_dict()
+        profile_text = f"Doctor Name: {doctor_data['name']}\n"
+        profile_text += f"Specialty: {doctor_data['specialty']}\n"
+        profile_text += f"Location: {doctor_data['location']}\n\n"
+
+        label = Label(content_area, text=profile_text, font=('Helvetica', 12))
+        label.pack(anchor="w", pady=10)
 
 
 def log_out():

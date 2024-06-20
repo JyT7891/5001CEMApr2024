@@ -1,8 +1,9 @@
+from tkinter import *
 import tkinter as tk
 from tkinter import messagebox
-from tkinter import ttk
 from PIL import Image, ImageTk
 from fire_base import getClient, initializeFirebase
+# Import the function from run_script.py
 from run_script import run_script1
 
 # Initialize the Firebase Admin SDK
@@ -11,6 +12,8 @@ db = getClient()
 
 # Create the main Tkinter window
 patient_login = tk.Tk()
+
+# y,x
 patient_login.minsize(1000, 790)
 patient_login.resizable(False, False)
 patient_login.title("Login")
@@ -81,76 +84,25 @@ def check_sign_up():
     run_script1('sign_up.py')
 
 
-# Function to create a rounded rectangle on a canvas
-def create_rounded_rectangle(canvas, x1, y1, x2, y2, radius=25, **kwargs):
-    points = [
-        x1 + radius, y1,
-        x1 + radius, y1,
-        x2 - radius, y1,
-        x2 - radius, y1,
-        x2, y1,
-        x2, y1 + radius,
-        x2, y1 + radius,
-        x2, y2 - radius,
-        x2, y2 - radius,
-        x2, y2,
-        x2 - radius, y2,
-        x2 - radius, y2,
-        x1 + radius, y2,
-        x1 + radius, y2,
-        x1, y2,
-        x1, y2 - radius,
-        x1, y2 - radius,
-        x1, y1 + radius,
-        x1, y1 + radius,
-        x1, y1,
-    ]
-    return canvas.create_polygon(points, **kwargs, smooth=True)
-
-
 # Function to set up the login page
 def login_page():
     global insert_username, insert_password
+    username = Label(patient_login, text="Username   : ", font=('Arial', 20))
+    username.place(x=200, y=310)
+    insert_username = Entry(patient_login, width=30, font='Arial 19')
+    insert_username.place(x=380, y=310)
 
-    # Styling inspired by UHS Inc.
-    patient_login.configure(bg='#f2f2f2')  # Light grey background
+    password = Label(patient_login, text="Password    : ", font=('Arial', 20))
+    password.place(x=200, y=410)
+    insert_password = Entry(patient_login, width=30, show="*", font=('Arial', 19))
+    insert_password.place(x=380, y=410)
 
-    # Create a canvas for the rounded rectangle
-    canvas = tk.Canvas(patient_login, bg='#f2f2f2', highlightthickness=0)
-    canvas.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=500, height=400)
+    sign_in = Button(patient_login, text="Sign Up", height=2, width=15, font=('Arial', 20),
+                     command=check_sign_up)
+    sign_in.place(x=230, y=510)
 
-    # Create the rounded rectangle
-    create_rounded_rectangle(canvas, 0, 0, 500, 400, radius=25, fill='#ffffff', outline='')
-
-    # Frame for the login form
-    login_frame = tk.Frame(canvas, bg='#ffffff')
-    login_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=480, height=380)
-
-    # Title label
-    title_label = tk.Label(login_frame, text="User Login", font=('Helvetica', 26, 'bold'), bg='#ffffff', fg='#333333')
-    title_label.pack(pady=20)
-
-    # Username label and entry
-    username_label = tk.Label(login_frame, text="Username", font=('Helvetica', 14), bg='#ffffff', fg='#333333')
-    username_label.pack(pady=10)
-    insert_username = ttk.Entry(login_frame, font=('Helvetica', 14))
-    insert_username.pack(pady=10)
-
-    # Password label and entry
-    password_label = tk.Label(login_frame, text="Password", font=('Helvetica', 14), bg='#ffffff', fg='#333333')
-    password_label.pack(pady=10)
-    insert_password = ttk.Entry(login_frame, font=('Helvetica', 14), show="*")
-    insert_password.pack(pady=10)
-
-    # Sign Up button
-    sign_up_button = ttk.Button(login_frame, text="Sign Up", command=check_sign_up)
-    sign_up_button.pack(side=tk.LEFT, padx=20, pady=20)
-
-    # Login button
-    login_button = ttk.Button(login_frame, text="Login", command=check_login)
-    login_button.pack(side=tk.RIGHT, padx=20, pady=20)
-
-    # Bind the Return key to the login function
+    submit = Button(patient_login, text="Login", height=2, width=15, font=('Arial', 20), command=check_login)
+    submit.place(x=500, y=510)
     patient_login.bind("<Return>", check_login)
 
 
