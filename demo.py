@@ -1,333 +1,284 @@
 import sys
-import time
-from tkinter import messagebox
+import os
 from tkinter import *
+from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
-from tkinter.ttk import Treeview, Style
 from fire_base import initializeFirebase, getClient
 from run_script import run_script1
 
+admin_clinic = Tk()
+admin_clinic.minsize(1300, 790)
+admin_clinic.resizable(False, False)
+admin_clinic.title("Call A Doctor Admin Page ")
 
-def initialize_home_page(username):
-    # Initialize the main window
-    home_page = Tk()
-    home_page.minsize(1250, 790)
-    home_page.resizable(False, False)
-    home_page.title(f"Call A Doctor - {username}")
+# Create the header frame
+header_frame = Frame(admin_clinic, bg='#07497d', height=100)
+header_frame.pack(fill=X)
+header_label = Label(header_frame, text="Call A Doctor", font=('Helvetica', 35, 'bold'), bg='#07497d', fg='white')
+header_label.pack(side=LEFT, padx=20)
+contact_label = Label(header_frame, text="Contact Us: +1 234 567 890 | email@example.com", font=('Helvetica', 15),
+                      bg='#07497d', fg='white')
+contact_label.pack(side=RIGHT, padx=20)
 
-    # Initialize the Firebase Admin SDK
-    conn = initializeFirebase()
-    db = getClient()
 
-    def open_home():
-        clear_content()
+def create_grid_list(parent, items, item_type):
+    clear_content()
 
-        # Create a frame for carousel and about us
-        content_frame = Frame(content_area, bg='white')
-        content_frame.pack(fill='both', expand=True)
+    # Header Frame
+    header_frame = Frame(parent)
+    header_frame.pack(fill='x', padx=20, pady=10)
 
-        # About us on the left side with margin and smaller padding
-        about_frame = Frame(content_frame, bg='white', padx=20, pady=10)
-        about_frame.grid(row=0, column=0, sticky='nsew')
-        about_us_frame(about_frame)
+    # Add Clinic Button in the Header Frame
+    if item_type == 'clinic':
+        add_clinic_button = Button(header_frame, text="Add Clinic", font=('Helvetica', 15), fg='white', bg='#07497d',
+                                   command=add_clinic)
+        add_clinic_button.pack(side="top", padx=10, pady=5)
 
-        # Load images carousel on the right side
-        carousel_frame = Frame(content_frame, bg="white", width=700, height=400)
-        carousel_frame.grid(row=1, column=0, padx=20, pady=10, sticky='nsew')
-        load_images(carousel_frame)
+    scrollable_frame = ttk.Frame(parent)
+    scrollable_frame.pack(expand=True, fill='both')
 
-    def load_images(slide_show_frame):
-        image_files = ["carousel1.jpg", "carousel2.jpg", "carousel3.jpg"]  # Replace with your image filenames
+    canvas = Canvas(scrollable_frame)
+    scrollbar = Scrollbar(scrollable_frame, orient="vertical", command=canvas.yview)
+    scroll_frame = Frame(canvas)
 
-        images = []
-        for img_file in image_files:
-            try:
-                image = Image.open(img_file)
-                resized_image = image.resize((700, 400))
-                photo_image = ImageTk.PhotoImage(resized_image)
-                images.append(photo_image)
-            except IOError as e:
-                print(f"Error loading image {img_file}: {e}")
+    scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
 
-        current_image_label = Label(slide_show_frame, bg="white")
-        next_image_label = Label(slide_show_frame, bg="white")
-        current_image_label.pack()
-        next_image_label.pack()
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
 
-        idx = 0
-        transition_duration = 2000  # Transition duration in milliseconds
+    frame_width = 300
+    frame_height = 200
+    num_columns = 3
 
-        def update_image():
-            nonlocal idx
-            current_image = images[idx]
-            next_image = images[(idx + 1) % len(images)]
+    for idx, item in enumerate(items):
+        row = idx // num_columns * 2 + 1
+        column = idx % num_columns
+        item_frame = Frame(scroll_frame, bd=1, relief="solid", padx=10, pady=10, bg="#f0f0f0", width=frame_width,
+                           height=frame_height)
+        item_frame.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
 
-            current_image_label.config(image=current_image)
-            current_image_label.place(relwidth=1, relheight=1)
-            current_image_label.lift()
-
-            next_image_label.config(image=next_image)
-            next_image_label.place(relwidth=1, relheight=1)
-            next_image_label.lift()
-
-            for alpha in range(0, 101, 5):  # Fade out current image
-                current_image_label.place(relwidth=1, relheight=1)
-                current_image_label.lift()
-
-                next_image_label.place(relwidth=1, relheight=1)
-                next_image_label.lift()
-
-                slide_show_frame.update()
-                time.sleep(transition_duration / 1000 / 20)
-
-            idx = (idx + 1) % len(images)
-            slide_show_frame.after(transition_duration, update_image)
-
-        update_image()
-
-    def about_us_frame(about_frame):
-        about_text = """
-            Welcome to Call A Doctor!
-
-            Call A Doctor is committed to providing high-quality healthcare services to our patients. 
-            Whether you need to search for clinics, book appointments, or manage your appointments, 
-            our platform is here to assist you every step of the way.
-
-            Our dedicated team works tirelessly to ensure that you receive the best possible care. 
-            Thank you for choosing Call A Doctor as your partner in health!
-
-            For any inquiries or assistance, please feel free to contact us.
-            """
-        about_label = Label(about_frame, text=about_text, justify='left', anchor='n', background='white',
-                            font=('Helvetica', 15), fg='#07497d')
-        about_label.grid(row=0, column=0, padx=20, pady=10, sticky='nsew')  # Ensure sticky='nsew' to stick to top
-
-        # Set row and column weights to allow resizing
-        about_frame.grid_rowconfigure(0, weight=1)
-        about_frame.grid_columnconfigure(0, weight=1)
-
-    def fetch_clinics_from_firebase():
-        clinics_ref = db.collection('clinic')
-        docs = clinics_ref.stream()
-        clinics = []
-        for doc in docs:
-            clinic = doc.to_dict()
-            clinics.append(clinic)
-        return clinics
-
-    def book_appointment():
-        clear_content()
-        text = Label(content_area, text="Book Appointment", font=('Helvetica', 25, 'bold'), background="white",
-                     fg='#07497d')
-        text.pack(pady=10)
-        clinics = fetch_clinics_from_firebase()
-
-        def button_command(clinic_id):
-            home_page.withdraw()
-            messagebox.showinfo("Test", f"{clinic_id}")
-            run_script1('show_map.py', clinic_id)
-
-        canvas = Canvas(content_area, bg="white")
-        scrollbar = Scrollbar(content_area, orient="vertical", command=canvas.yview)
-        scrollable_frame = Frame(canvas, bg="white")
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack(side=LEFT, fill=BOTH, expand=True)
-        scrollbar.pack(side=RIGHT, fill=Y)
-        frame_width = 300
-        frame_height = 150
-        num_columns = 3
-        for idx, clinic in enumerate(clinics):
-            row = idx // num_columns
-            column = idx % num_columns
-            clinic_frame = Frame(scrollable_frame, bd=0, relief="groove", padx=10, pady=10, bg="#f0f0f0",
-                                 width=frame_width, height=frame_height)
-            clinic_frame.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
-            clinic_name_label = Label(clinic_frame, text=clinic['name'], font=('Helvetica', 15, 'bold'), bg="#f0f0f0",
+        if item_type == 'clinic':
+            item_label = Label(item_frame, text=item['name'], font=('Helvetica', 15, 'bold'), bg="#f0f0f0",
+                               fg='#07497d')
+            item_label.pack(anchor="w")
+            item_detail_label = Label(item_frame, text=item['phone_num'], font=('Helvetica', 12), bg="#f0f0f0",
                                       fg='#07497d')
-            clinic_name_label.pack(anchor="w")
-            clinic_num_label = Label(clinic_frame, text=clinic['phone_num'], font=('Helvetica', 12), bg="#f0f0f0",
-                                     fg='#07497d')
-            clinic_num_label.pack(anchor="w")
-            open_time_label = Label(clinic_frame, text=f"Open Time: {clinic['open_time']}", font=('Helvetica', 12),
+            item_detail_label.pack(anchor="w")
+            open_time_label = Label(item_frame, text=f"Open Time: {item['open_time']}", font=('Helvetica', 12),
                                     bg="#f0f0f0", fg='#07497d')
             open_time_label.pack(anchor="w", pady=2)
-            close_time_label = Label(clinic_frame, text=f"Close Time: {clinic['close_time']}", font=('Helvetica', 12),
+            close_time_label = Label(item_frame, text=f"Close Time: {item['close_time']}", font=('Helvetica', 12),
                                      bg="#f0f0f0", fg='#07497d')
             close_time_label.pack(anchor="w", pady=2)
-            clinic_frame.bind("<Button-1>", lambda event, clinic_id=clinic['clinic_id']: button_command(clinic_id))
-            clinic_frame.pack_propagate(False)
 
-    def open_profile():
-        clear_content()
-        profile_frame = Frame(content_area, background='white')
-        profile_frame.pack(padx=50, pady=20)
-        profile_label = Label(profile_frame, text="Profile", font=('Helvetica', 30, 'bold'), background='white',
+            # Delete button for clinics
+            delete_button = Button(item_frame, text="Delete", bg="red", fg="white", width=10, height=5,
+                                   font=('Helvetica', 15), command=lambda cid=item['clinic_id']: delete_clinic(cid))
+            delete_button.pack(side="bottom", padx=5, pady=5)
+
+        elif item_type == 'doctor':
+            item_label = Label(item_frame, text=item['doc_name'], font=('Helvetica', 15, 'bold'), bg="#f0f0f0",
+                               fg='#07497d')
+            item_label.pack(anchor="w")
+            item_detail_label = Label(item_frame, text=item['service'], font=('Helvetica', 12), bg="#f0f0f0",
+                                      fg='#07497d')
+            item_detail_label.pack(anchor="w")
+            clinic_label = Label(item_frame, text=f"Clinic: {item['clinic_id']}", font=('Helvetica', 12), bg="#f0f0f0",
+                                 fg='#07497d')
+            clinic_label.pack(anchor="w", pady=2)
+            availability_label = Label(item_frame, text=f"Available: {item['is_Available']}", font=('Helvetica', 12),
+                                       bg="#f0f0f0", fg='#07497d')
+            availability_label.pack(anchor="w", pady=2)
+
+            # Delete button for doctors
+            delete_button = Button(item_frame, text="Delete", bg="red", fg="white", command=lambda did=item['doc_name']: delete_doctor(did))
+            delete_button.pack(side="bottom", pady=5)
+
+        elif item_type == 'user':
+            item_label = Label(item_frame, text=item['name'], font=('Helvetica', 15, 'bold'), bg="#f0f0f0",
+                               fg='#07497d')
+            item_label.pack(anchor="w")
+            item_detail_label = Label(item_frame, text=f"Gender        : {item['gender']}", font=('Helvetica', 12),
+                                      bg="#f0f0f0", fg='#07497d')
+            item_detail_label.pack(anchor="w")
+            blood_type_label = Label(item_frame, text=f"Blood Type : {item['bloodType']}", font=('Helvetica', 12),
+                                     bg="#f0f0f0", fg='#07497d')
+            blood_type_label.pack(anchor="w", pady=2)
+            age_label = Label(item_frame, text=f"Age              : {item['age']}", font=('Helvetica', 12), bg="#f0f0f0",
                               fg='#07497d')
-        profile_label.pack()
-        try:
-            doc = db.collection('user').document(username).get()
-            if doc.exists:
-                patient_info = doc.to_dict()
-            else:
-                patient_info = {'username': 'N/A', 'age': 'N/A', 'email': 'N/A', 'password': 'N/A', 'blood_type': 'N/A'}
-            profile_data_frame = Frame(profile_frame, background='white')
-            profile_data_frame.pack(padx=20, pady=20)
-            Label(profile_data_frame, text="Username       : ", font=('Helvetica', 15), bg='white', fg='#07497d').grid(
-                row=0, column=0, sticky='w', padx=5, pady=5)
-            Label(profile_data_frame, text=patient_info['username'], font=('Helvetica', 15), bg='white',
-                  fg='#07497d').grid(row=0, column=1, sticky='w', padx=5, pady=5)
-            Label(profile_data_frame, text="Name              : ", font=('Helvetica', 15), bg='white',
-                  fg='#07497d').grid(row=1, column=0, sticky='w', padx=5, pady=5)
-            name_entry = Entry(profile_data_frame, font=('Helvetica', 15), width=15)
-            name_entry.grid(row=1, column=1, padx=5, pady=5)
-            name_entry.insert(0, patient_info['name'])
+            age_label.pack(anchor="w", pady=2)
 
-            Label(profile_data_frame, text="Gender           : ", font=('Helvetica', 15), bg='white').grid(row=2,
-                                                                                                           column=0,
-                                                                                                           sticky='w',
-                                                                                                           padx=5,
-                                                                                                           pady=5)
-            Label(profile_data_frame, text=patient_info['gender'], font=('Helvetica', 15), bg='white').grid(row=2,
-                                                                                                            column=1,
-                                                                                                            sticky='w',
-                                                                                                            padx=5,
-                                                                                                            pady=5)
+            # Delete button for users
+            delete_button = Button(item_frame, text="Delete", bg="red", fg="white", command=lambda uid=item['username']: delete_user(uid))
+            delete_button.pack(side="bottom", pady=5)
 
-            Label(profile_data_frame, text="Blood Type     : ", font=('Helvetica', 15), bg='white').grid(row=3,
-                                                                                                         column=0,
-                                                                                                         sticky='w',
-                                                                                                         padx=5,
-                                                                                                         pady=5)
-            Label(profile_data_frame, text=patient_info['bloodType'], font=('Helvetica', 15), bg='white').grid(row=3,
-                                                                                                               column=1,
-                                                                                                               sticky='w',
-                                                                                                               padx=5,
-                                                                                                               pady=5)
-
-            # Age Label and Value
-            Label(profile_data_frame, text="Age                : ", font=('Helvetica', 15), bg='white').grid(row=4,
-                                                                                                             column=0,
-                                                                                                             sticky='w',
-                                                                                                             padx=5,
-                                                                                                             pady=5)
-            Label(profile_data_frame, text=patient_info['age'], font=('Helvetica', 15), bg='white').grid(row=4,
-                                                                                                         column=1,
-                                                                                                         sticky='w',
-                                                                                                         padx=5,
-                                                                                                         pady=5)
-
-            # Date of Birth Labels and Values
-            Label(profile_data_frame, text="Date of Birth   : ", font=('Helvetica', 15), bg='white').grid(row=5,
-                                                                                                          column=0,
-                                                                                                          sticky='w',
-                                                                                                          padx=5,
-                                                                                                          pady=5)
-
-            birth_date_str = f"{patient_info['year']} / {patient_info['month']} / {patient_info['day']}"
-            Label(profile_data_frame, text=birth_date_str, font=('Helvetica', 15), bg='white').grid(row=5,
-                                                                                                    column=1,
-                                                                                                    sticky='w',
-                                                                                                    padx=5,
-                                                                                                    pady=5)
-
-            # Entry fields for editable fields
-            Label(profile_data_frame, text="Password       : ", font=('Helvetica', 15), bg='white').grid(row=6,
-                                                                                                         column=0,
-                                                                                                         sticky='w',
-                                                                                                         padx=5,
-                                                                                                         pady=5)
-            password_entry = Entry(profile_data_frame, font=('Helvetica', 15), width=15)
-            password_entry.grid(row=6, column=1, padx=5, pady=5)
-            password_entry.insert(0, patient_info['password'])
-
-            def update_profile():
-                new_name = name_entry.get()
-                new_password = password_entry.get()
-
-                # Update the profile data
-                updated_data = {
-                    'name': new_name,
-                    'password': new_password
-                }
-                # Update the profile in Firebase
-                try:
-                    db.collection('user').document(username).update(updated_data)
-                    messagebox.showinfo("Update", "Profile updated successfully")
-                except Exception as e:
-                    messagebox.showerror("Error", f"An error occurred: {e}")
-
-            update_button = Button(profile_frame, text="Update Profile", command=update_profile, font=('Helvetica', 12))
-            update_button.pack(pady=20)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
-
-    # Create the header frame
-    header_frame = Frame(home_page, bg='#07497d', height=100)
-    header_frame.pack(fill=X)
-    header_label = Label(header_frame, text="Call A Doctor", font=('Helvetica', 35, 'bold'), bg='#07497d', fg='white')
-    header_label.pack(side=LEFT, padx=20)
-    contact_label = Label(header_frame, text="Contact Us: +1 234 567 890 | email@example.com", font=('Helvetica', 15),
-                          bg='#07497d', fg='white')
-    contact_label.pack(side=RIGHT, padx=20)
-
-    # Create the sidebar frame
-    sidebar_frame = Frame(home_page, bg='#ADD8E6', width=500)
-    sidebar_frame.pack(side=LEFT, fill=Y)
-
-    # Function to create and pack buttons with events
-    def create_button(text, command):
-        button = Button(sidebar_frame, text=text, command=command, width=20, height=2, font=('Helvetica', 10))
-        button.pack(pady=20)
-        button.bind("<Enter>", on_enter)
-        button.bind("<Leave>", on_leave)
-        button.bind("<ButtonPress-1>", on_click)
-        button.bind("<ButtonRelease-1>", on_release)
-        return button
-
-    # Define button events
-    def on_enter(event):
-        event.widget.config(width=19, height=2, font=('Helvetica', 12, 'bold'))
-
-    def on_leave(event):
-        event.widget.config(width=20, height=2, font=('Helvetica', 10))
-
-    def on_click(event):
-        event.widget.config(bg="blue")
-
-    def on_release(event):
-        event.widget.config(bg="SystemButtonFace")
-
-    # Create buttons for navigation
-    create_button("Home", open_home)
-    create_button("Profile", open_profile)
-    create_button("Book Appointment", book_appointment)
-    create_button("Manage Appointment",
-                  lambda: messagebox.showinfo("Info", "Manage Appointment feature is under development."))
-    # Placeholder for manage appointment
-    create_button("Log Out", home_page.quit)
-
-    def clear_content():
-        # Clear the content area
-        for widget in content_area.winfo_children():
-            widget.destroy()
-
-    # Create the main content area
-    content_area = Frame(home_page, bg='white', padx=20, pady=20)
-    content_area.pack(fill=BOTH, expand=True)
-
-    # Initialize with home content
-    open_home()
-
-    # Run the main event loop
-    home_page.mainloop()
+        item_frame.pack_propagate(False)
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: python home_page.py <username>")
-    else:
-        username = sys.argv[1]
-        initialize_home_page(username)
+def get_clinics(db):
+    clinics_ref = db.collection('clinic')
+    clinics = []
+    for clinic in clinics_ref.stream():
+        clinics.append(clinic.to_dict())
+    return clinics
+
+
+def get_doctors(db):
+    doctors_ref = db.collection('doctor')
+    doctors = []
+    for doctor in doctors_ref.stream():
+        doctors.append(doctor.to_dict())
+    return doctors
+
+
+def get_users(db):
+    users_ref = db.collection('user')
+    users = []
+    for user in users_ref.stream():
+        users.append(user.to_dict())
+    return users
+
+
+def clinic_list():
+    clinics = get_clinics(db)
+    create_grid_list(content_area, clinics, 'clinic')
+
+def doctor_list():
+    doctors = get_doctors(db)
+    create_grid_list(content_area, doctors, 'doctor')
+
+
+def user_list():
+    users = get_users(db)
+    create_grid_list(content_area, users, 'user')
+
+
+def log_out():
+    admin_clinic.destroy()
+    run_script1('login_page.py')
+
+
+def clear_content():
+    for widget in content_area.winfo_children():
+        widget.destroy()
+
+
+def on_enter(event):
+    event.widget.config(bg='#07497d')
+
+
+def on_leave(event):
+    event.widget.config(bg='#2a2a2a')
+
+
+def create_nav_button(text, command):
+    button = Button(nav_frame, text=text, font=('Helvetica', 20), fg='white', bg='#2a2a2a', command=command,
+                    relief='flat')
+    button.pack(fill='x', padx=20, pady=10)
+    button.bind("<Enter>", on_enter)
+    button.bind("<Leave>", on_leave)
+
+
+def add_clinic():
+
+    # Function to add a new clinic to Firebase
+    def submit_clinic():
+        new_clinic = {
+            'name': name_entry.get(),
+            'phone_num': phone_entry.get(),
+            'open_time': open_time_entry.get(),
+            'close_time': close_time_entry.get()
+            # Add more fields as needed
+        }
+        # Add new clinic to Firebase collection
+        db.collection('clinic').add(new_clinic)
+        messagebox.showinfo("Success", "New clinic added successfully")
+        # Clear the form entries after submission
+        name_entry.delete(0, END)
+        phone_entry.delete(0, END)
+        open_time_entry.delete(0, END)
+        close_time_entry.delete(0, END)
+        # Update clinic list display
+        clinic_list()
+        add_clinic_window.destroy()
+
+    # Create a Toplevel window for adding clinic
+    add_clinic_window = Toplevel(admin_clinic)
+    add_clinic_window.title("Add New Clinic")
+    add_clinic_window.minsize(500, 300)
+    add_clinic_window.resizable(False, False)
+
+    # Clinic Name
+    Label(add_clinic_window, text="Clinic Name    : ", font=('Helvetica', 12)).grid(row=0, column=0, padx=10, pady=5, sticky="e")
+    name_entry = Entry(add_clinic_window, width=25, font='Arial 19')
+    name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+
+    # Phone Number
+    Label(add_clinic_window, text="Phone Number    : ", font=('Helvetica', 12)).grid(row=1, column=0, padx=10, pady=5, sticky="e")
+    phone_entry = Entry(add_clinic_window, width=25, font='Arial 19')
+    phone_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+
+    # Open Time
+    Label(add_clinic_window, text="Open Time      : ", font=('Helvetica', 12)).grid(row=2, column=0, padx=10, pady=5, sticky="e")
+    open_time_entry = Entry(add_clinic_window, width=25, font='Arial 19')
+    open_time_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+
+    # Close Time
+    Label(add_clinic_window, text="Close Time      : ", font=('Helvetica', 12)).grid(row=3, column=0, padx=10, pady=5, sticky="e")
+    close_time_entry = Entry(add_clinic_window, width=25, font='Arial 19')
+    close_time_entry.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+
+    # Submit Button
+    submit_button = Button(add_clinic_window, text="Submit", command=submit_clinic, height=1, width=10,
+                           font=('Arial', 20))
+    submit_button.grid(row=4, columnspan=2, padx=10, pady=10, ipadx=50)
+
+    add_clinic_window.mainloop()
+
+
+def delete_clinic(clinic_id):
+    # Function to delete a clinic from Firebase
+    db.collection('clinic').document(clinic_id).delete()
+    messagebox.showinfo("Success", "Clinic deleted successfully")
+    # Update clinic list display after deletion
+    clinic_list()
+
+
+def delete_doctor(doctor_id):
+    # Function to delete a doctor from Firebase
+    db.collection('doctor').document(doctor_id).delete()
+    messagebox.showinfo("Success", "Doctor deleted successfully")
+    # Update doctor list display after deletion
+    doctor_list()
+
+
+def delete_user(user_id):
+    # Function to delete a user from Firebase
+    db.collection('user').document(user_id).delete()
+    messagebox.showinfo("Success", "User deleted successfully")
+    # Update user list display after deletion
+    user_list()
+
+
+nav_frame = Frame(admin_clinic, width=200, bg='#2a2a2a')
+nav_frame.pack(fill='y', side='left')
+
+content_area = Frame(admin_clinic, bg='white')
+content_area.pack(fill='both', expand=True)
+
+create_nav_button("Clinic List", clinic_list)
+create_nav_button("Doctor List", doctor_list)
+create_nav_button("User List", user_list)
+create_nav_button("Log Out", log_out)
+
+add_clinic_button = Button(nav_frame, text="Add Clinic", font=('Helvetica', 20), fg='white', bg='#2a2a2a', command=add_clinic, relief='flat')
+add_clinic_button.pack(fill='x', padx=20, pady=10)
+add_clinic_button.bind("<Enter>", on_enter)
+add_clinic_button.bind("<Leave>", on_leave)
+
+conn = initializeFirebase()
+db = getClient()
+
+admin_clinic.mainloop()
