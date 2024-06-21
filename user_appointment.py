@@ -12,6 +12,31 @@ import sys
 conn = initializeFirebase()
 db = getClient()
 
+def getClinicName(clinic_id):
+    try:
+        # Fetch clinic document using clinic ID
+        clinic_doc = db.collection('clinic').document(clinic_id).get()
+        if clinic_doc.exists:
+            clinic_data = clinic_doc.to_dict()
+            return clinic_data.get('name')
+        else:
+            messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
+            return None
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        return None
+
+def isDoctorAvailable(doctor_id):
+    try:
+        doctor_doc = db.collection('doctor').document(doctor_id).get()
+        if doctor_doc.exists:
+            doctor_data = doctor_doc.to_dict()
+            return doctor_data.get('is_Available', False)  # Ensure field name matches Firestore document
+        else:
+            return False
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        return False
 
 # Function to submit appointment
 def submit_appointment():
@@ -40,10 +65,14 @@ def submit_appointment():
         if not doctor_id:
             messagebox.showerror("Error", f"Doctor '{doctor}' not found.")
             return
-        
+
+        if not isDoctorAvailable(doctor_id):
+            messagebox.showerror("Doctor Not Available", f"Doctor '{doctor}' is not available.")
+            return
+
         # Construct the appointment data
         appointment_data = {
-            "clinic_name": clinic_id,  # Assuming clinic_id is defined elsewhere
+            "clinic_name": getClinicName(clinic_id),  # Fetch clinic name based on clinic_id
             'patient_name': username,
             "doc_id": doctor,
             "date": date,
@@ -71,38 +100,23 @@ def submit_appointment():
         # Show error message if any exception occurs
         messagebox.showerror("Error", f"Failed to add appointment: {e}")
 
-
 def back():
     clinic.destroy()
     run_script1("user_home_page.py", username)
-
 
 def getDoctorByClinicID(clinic_id):
     try:
         # Fetch doctors using clinic ID
         doctor_docs = db.collection('doctor').where('clinic_id', '==', clinic_id).get()
-        doctor_list = [doc.to_dict()['doc_name'] for doc in doctor_docs]
-        return doctor_list
+        doctor_list = []
+        for doc in doctor_docs:
+            if isDoctorAvailable(doc.id):
+                doctor_list.append(doc.to_dict()['doc_name'])
+        return doctor_list if doctor_list else ['No doctors available']
 
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred: {str(e)}")
-        return []
-
-
-def getClinicName(clinic_id):
-    try:
-        # Fetch clinic document using clinic ID
-        clinic_doc = db.collection('clinic').document(clinic_id).get()
-        if clinic_doc.exists:
-            clinic_data = clinic_doc.to_dict()
-            return clinic_data.get('name')
-        else:
-            messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
-            return None
-    except Exception as e:
-        messagebox.showerror("Error", f"An error occurred: {str(e)}")
-        return None
-
+        return ['No doctors available']
 
 # Function to validate date and time
 def validate_datetime():
@@ -121,7 +135,6 @@ def validate_datetime():
         return False
     else:
         return True
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -147,7 +160,7 @@ if __name__ == "__main__":
 
     global doctor_var
     doctor_var = tk.StringVar(clinic)
-    doctor_list = getDoctorByClinicID(clinic_id)  # Get doctors based on clinic name
+    doctor_list = getDoctorByClinicID(clinic_id)  # Get available doctors based on clinic name
     doctor_menu = tk.OptionMenu(clinic, doctor_var, *doctor_list)
     doctor_menu.place(x=300, y=150)
     doctor_menu.config(width=20)

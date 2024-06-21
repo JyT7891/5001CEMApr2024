@@ -1,11 +1,10 @@
 import sys
-import time
-from tkinter import messagebox
+import os
 from tkinter import *
+from tkinter import messagebox
 from PIL import Image, ImageTk
 from fire_base import initializeFirebase, getClient
 from run_script import run_script1
-import os
 
 def initialize_home_page():
     username = os.getenv('USERNAME')  # Retrieve the username from the environment variable
@@ -19,17 +18,28 @@ def initialize_home_page():
     home_page.resizable(False, False)
     home_page.title(f"Call A Doctor - {username}")
 
+    # Create the header frame
+    header_frame = Frame(home_page, bg='#07497d', height=100)
+    header_frame.pack(fill=X)
+    header_label = Label(header_frame, text="Call A Doctor", font=('Helvetica', 35, 'bold'), bg='#07497d',
+                         fg='white')
+    header_label.pack(side=LEFT, padx=20)
+    contact_label = Label(header_frame, text="Contact Us: +1 234 567 890 | email@example.com",
+                          font=('Helvetica', 15),
+                          bg='#07497d', fg='white')
+    contact_label.pack(side=RIGHT, padx=20)
+
     conn = initializeFirebase()
     db = getClient()
 
     def fetch_clinics_from_firebase():
-        clinics_ref = db.collection('clinic')
-        docs = clinics_ref.stream()
-        clinics = []
-        for doc in docs:
-            clinic = doc.to_dict()
-            clinics.append(clinic)
-        return clinics
+        try:
+            clinics_ref = db.collection('clinic')
+            docs = clinics_ref.stream()
+            return [doc.to_dict() for doc in docs]
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while fetching clinics: {str(e)}")
+            return []
 
     def fetch_user_appointments(username):
         try:
@@ -108,7 +118,6 @@ def initialize_home_page():
     def book_appointment():
         clear_content()
         text = Label(content_area, text="Book Appointment", font=('Helvetica', 25, 'bold'), fg='#07497d')
-        text.pack()
         text.pack(pady=10)
         clinics = fetch_clinics_from_firebase()
 
@@ -124,9 +133,11 @@ def initialize_home_page():
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.pack(side=RIGHT, fill=Y)
+
         frame_width = 300
         frame_height = 150
         num_columns = 3
+
         for idx, clinic in enumerate(clinics):
             row = idx // num_columns
             column = idx % num_columns
@@ -190,28 +201,42 @@ def initialize_home_page():
         canvas.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.pack(side=RIGHT, fill=Y)
 
-        for idx, appointment in enumerate(appointments):
+        for appointment in appointments:
             appointment_frame = Frame(scrollable_frame, bd=1, relief="solid", padx=10, pady=10, bg="#f0f0f0")
             appointment_frame.pack(padx=10, pady=10, fill='x')
 
-            clinic_label = Label(appointment_frame, text=f"Clinic: {appointment['clinic_name']}", font=('Helvetica', 15, 'bold'), bg="#f0f0f0", fg='#07497d')
+            clinic_label = Label(appointment_frame, text=f"Clinic: {appointment['clinic_name']}",
+                                 font=('Helvetica', 15, 'bold'), bg="#f0f0f0", fg='#07497d')
             clinic_label.pack(anchor="w")
-            date_label = Label(appointment_frame, text=f"Date: {appointment['date']}", font=('Helvetica', 12), bg="#f0f0f0", fg='#07497d')
+            date_label = Label(appointment_frame, text=f"Date: {appointment['date']}", font=('Helvetica', 12),
+                               bg="#f0f0f0", fg='#07497d')
             date_label.pack(anchor="w")
-            time_label = Label(appointment_frame, text=f"Time: {appointment['time']}", font=('Helvetica', 12), bg="#f0f0f0", fg='#07497d')
+            time_label = Label(appointment_frame, text=f"Time: {appointment['time']}", font=('Helvetica', 12),
+                               bg="#f0f0f0", fg='#07497d')
             time_label.pack(anchor="w")
-            doc_label = Label(appointment_frame, text=f"Doctor: {appointment['doc_id']}", font=('Helvetica', 12), bg="#f0f0f0", fg='#07497d')
+            doc_label = Label(appointment_frame, text=f"Doctor: {appointment['doc_id']}", font=('Helvetica', 12),
+                              bg="#f0f0f0", fg='#07497d')
             doc_label.pack(anchor="w")
 
             details_button = Button(appointment_frame, text="View Details", command=lambda a=appointment: view_details(a))
-            details_button.pack(side=LEFT, padx=5)
+            details_button.pack(side=LEFT, padx=10, pady=5)
 
             cancel_button = Button(appointment_frame, text="Cancel", command=lambda a=appointment: cancel_appointment(a))
-            cancel_button.pack(side=LEFT, padx=5)
+            cancel_button.pack(side=LEFT, padx=10, pady=5)
 
     def clear_content():
         for widget in content_area.winfo_children():
             widget.destroy()
+
+    def on_enter(event):
+        event.widget.config(bg='#07497d')
+
+    def on_leave(event):
+        event.widget.config(bg='#2a2a2a')
+
+    def logout():
+        home_page.destroy()  # Destroy the main window
+        # You can add code here to redirect to the login page or exit the application
 
     nav_frame = Frame(home_page, width=200, bg='#2a2a2a')
     nav_frame.pack(fill='y', side='left')
@@ -219,23 +244,48 @@ def initialize_home_page():
     content_area = Frame(home_page, bg='white')
     content_area.pack(fill='both', expand=True)
 
+    # Load and display the logo
+    logo_image = PhotoImage(file="cad1.png")
+    logo_label = Label(nav_frame, image=logo_image, bg="#ADD8E6")
+    logo_label.pack(pady=20)
+
+    # Button definitions with padding and increased space
     about_us_btn = Button(nav_frame, text="Home", font=('Helvetica', 20), fg='white', bg='#2a2a2a', command=open_home,
                           relief='flat')
-    about_us_btn.pack(fill='x')
+    about_us_btn.pack(fill='x', padx=20, pady=20)  # Increased padx and pady
+
+    about_us_btn.bind("<Enter>", on_enter)
+    about_us_btn.bind("<Leave>", on_leave)
 
     clinic_btn = Button(nav_frame, text="Search Clinics", font=('Helvetica', 20), fg='white', bg='#2a2a2a',
-                        command=lambda: book_appointment(), relief='flat')
-    clinic_btn.pack(fill='x')
+                        command=book_appointment, relief='flat')
+    clinic_btn.pack(fill='x', padx=20, pady=20)  # Increased padx and pady
+    clinic_btn.bind("<Enter>", on_enter)
+    clinic_btn.bind("<Leave>", on_leave)
 
     book_btn = Button(nav_frame, text="Book Appointment", font=('Helvetica', 20), fg='white', bg='#2a2a2a',
                       command=book_appointment, relief='flat')
-    book_btn.pack(fill='x')
+    book_btn.pack(fill='x', padx=20, pady=20)  # Increased padx and pady
+    book_btn.bind("<Enter>", on_enter)
+    book_btn.bind("<Leave>", on_leave)
 
     appointments_btn = Button(nav_frame, text="My Appointments", font=('Helvetica', 20), fg='white', bg='#2a2a2a',
                               command=my_appointments, relief='flat')
-    appointments_btn.pack(fill='x')
+    appointments_btn.pack(fill='x', padx=20, pady=20)  # Increased padx and pady
+    appointments_btn.bind("<Enter>", on_enter)
+    appointments_btn.bind("<Leave>", on_leave)
 
+    # Logout button
+    logout_btn = Button(nav_frame, text="Logout", font=('Helvetica', 20), fg='white', bg='#2a2a2a',
+                        command=logout, relief='flat')
+    logout_btn.pack(fill='x', padx=20, pady=20)  # Increased padx and pady
+    logout_btn.bind("<Enter>", on_enter)
+    logout_btn.bind("<Leave>", on_leave)
+
+    # Initial call to open_home
     open_home()
+
+    # Start the Tkinter main loop
     home_page.mainloop()
 
 if __name__ == "__main__":

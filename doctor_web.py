@@ -1,38 +1,66 @@
+import os
 import sys
 from tkinter import *
 from tkinter import messagebox
 from datetime import datetime
-from run_script import run_script1, show_clinic_patient
+from run_script import run_script1
 from fire_base import getClient, initializeFirebase
+from PIL import Image, ImageTk
 
 # Initialize the Firebase Admin SDK
 conn = initializeFirebase()
 db = getClient()
 
-# Global list to store appointments
-appointments = []
-
 
 def doctor_website(username):
-    # Initialize Tkinter
     doctor = Tk()
-    doctor.title(f"Doctor Appointment System - {username}")
     doctor.minsize(1250, 790)
     doctor.resizable(False, False)
+    doctor.title(f"Doctor Appointment System - {username}")
+
+    # Create the header frame
+    header_frame = Frame(doctor, bg='#07497d', height=100)
+    header_frame.pack(fill=X)
+    header_label = Label(header_frame, text="Call A Doctor", font=('Helvetica', 35, 'bold'), bg='#07497d',
+                         fg='white')
+    header_label.pack(side=LEFT, padx=20)
+    contact_label = Label(header_frame, text="Contact Us: +1 234 567 890 | email@example.com",
+                          font=('Helvetica', 15),
+                          bg='#07497d', fg='white')
+    contact_label.pack(side=RIGHT, padx=20)
 
     def clock_in_out():
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        messagebox.showinfo("Clock In/Out", f"You have clocked in/out at {current_time}")
-        doctor_ref = db.collection('doctor').document(username).get()
+        try:
+            # Fetch current doctor document from Firestore
+            doctor_ref = db.collection('doctor').document(username)
+            doctor_doc = doctor_ref.get()
 
-        # Example: Update Firebase with clock-in/out time
-        # Assuming you have a 'doctors' collection with a document for each doctor
-        doctor_id = username # Replace with actual doctor ID
-        doctor_ref = db.collection('doctors').document(doctor_id)
-        doctor_ref.update({
-            'last_clock_time': current_time,
-            'clocked_in': True,  # Or False for clock out
-        })
+            if doctor_doc.exists:
+                doctor_data = doctor_doc.to_dict()
+                current_status = doctor_data.get('is_Available',
+                                                 False)  # Default to False if 'is_Available' doesn't exist
+
+                # Toggle the 'is_Available' status
+                new_status = not current_status  # Toggle the boolean value
+
+                # Update the document with the new 'is_Available' status
+                doctor_ref.update({
+                    'is_Available': new_status
+                })
+
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                if new_status:
+                    status_msg = "available"
+                else:
+                    status_msg = "unavailable"
+
+                messagebox.showinfo("Availability Update", f"You are now {status_msg} at {current_time}")
+
+            else:
+                messagebox.showerror("Error", "Doctor profile not found.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
     def check_appointment():
         clear_content()
@@ -42,16 +70,12 @@ def doctor_website(username):
             run_script1('patient_report.py', username)
 
         try:
-            # Fetch doctor document to get appointments array
             doctor_ref = db.collection('doctor').document(username).get()
             if doctor_ref.exists:
                 doctor_data = doctor_ref.to_dict()
-
-                # Extract appointments array from doctor_data
                 appointments_array = doctor_data.get('appointments', [])
 
                 if appointments_array:
-                    # Create a scrollable canvas
                     canvas = Canvas(content_area, bg="white")
                     scrollbar = Scrollbar(content_area, orient="vertical", command=canvas.yview)
                     scrollable_frame = Frame(canvas, bg="white")
@@ -80,34 +104,31 @@ def doctor_website(username):
                                               font=('Helvetica', 15, 'bold'), bg="#f0f0f0", fg='#07497d')
                         patient_label.pack(anchor="w")
 
-                        date_label = Label(appointment_frame, text=f"Date    :  {appointment_data.get('date', 'N/A')}",
+                        date_label = Label(appointment_frame, text=f"Date: {appointment_data.get('date', 'N/A')}",
                                            font=('Helvetica', 12), bg="#f0f0f0", fg='#07497d')
                         date_label.pack(anchor="w")
 
-                        time_label = Label(appointment_frame, text=f"Time    :  {appointment_data.get('time', 'N/A')}",
+                        time_label = Label(appointment_frame, text=f"Time: {appointment_data.get('time', 'N/A')}",
                                            font=('Helvetica', 12), bg="#f0f0f0", fg='#07497d')
                         time_label.pack(anchor="w", pady=2)
 
-                        doctor_label = Label(appointment_frame, text=f"Doctor :  {appointment_data.get('doc_id', 'N/A')}",
+                        doctor_label = Label(appointment_frame, text=f"Doctor: {appointment_data.get('doc_id', 'N/A')}",
                                              font=('Helvetica', 12), bg="#f0f0f0", fg='#07497d')
                         doctor_label.pack(anchor="w", pady=2)
 
-                        appointment_frame.bind("<Button-1>", lambda: check_appointment_button)
+                        appointment_frame.bind("<Button-1>",
+                                               lambda event, app=appointment_data: check_appointment_button())
                         appointment_frame.pack_propagate(False)
-
                 else:
                     label = Label(content_area, text="No appointments found.", font=('Helvetica', 12))
                     label.pack(anchor="w", pady=10)
-
             else:
                 messagebox.showerror("Error", "Doctor profile not found.")
-
         except Exception as e:
             messagebox.showerror("Error", f"Failed to fetch appointments: {str(e)}")
 
     def get_clinic_name(clinic_id):
         try:
-            # Fetch clinic document using clinic ID
             clinic_doc = db.collection('clinic').document(clinic_id).get()
             if clinic_doc.exists:
                 clinic_data = clinic_doc.to_dict()
@@ -125,7 +146,6 @@ def doctor_website(username):
         content_frame = Frame(content_area, bg='white')
         content_frame.pack(fill='both', expand=True)
 
-        # Example: Query doctor profile from Firebase Firestore using the username
         doctor_ref = db.collection('doctor').document(username).get()
         doctor_data = doctor_ref.to_dict()
         clinic_name = get_clinic_name(doctor_data['clinic_id'])
@@ -141,65 +161,45 @@ def doctor_website(username):
             label.pack(anchor="center", pady=50)
 
     def log_out():
-        # Clear the content area
         doctor.destroy()
         run_script1('login_page.py')
 
     def clear_content():
-        # Clear the content area
         for widget in content_area.winfo_children():
             widget.destroy()
 
-    # Function to handle button appearance on hover and click
     def on_enter(event):
-        event.widget.config(width=19, height=2, font=('Helvetica', 12, 'bold'))
+        event.widget.config(bg='#07497d')
 
     def on_leave(event):
-        event.widget.config(width=20, height=2, font=('Helvetica', 10))
+        event.widget.config(bg='#2a2a2a')
 
-    def on_click(event):
-        event.widget.config(bg="blue")
+    def create_nav_button(text, command):
+        button = Button(nav_frame, text=text, font=('Helvetica', 20), fg='white', bg='#2a2a2a', command=command,
+                        relief='flat')
+        button.pack(fill='x', padx=20, pady=10)  # Adjusted padx and pady for spacing
+        button.bind("<Enter>", on_enter)  # Bind on_enter function to mouse enter event
+        button.bind("<Leave>", on_leave)  # Bind on_leave function to mouse leave event
 
-    def on_release(event):
-        event.widget.config(bg="SystemButtonFace")
+    nav_frame = Frame(doctor, width=200, bg='#2a2a2a')
+    nav_frame.pack(fill='y', side='left')
 
-    # Function to create and pack buttons with events
-    def create_button(text, command):
-        button = Button(sidebar, text=text, command=command, width=20, height=2, font=('Helvetica', 10))
-        button.pack(pady=20)
-        button.bind("<Enter>", on_enter)
-        button.bind("<Leave>", on_leave)
-        button.bind("<ButtonPress-1>", on_click)
-        button.bind("<ButtonRelease-1>", on_release)
-        return button
+    content_area = Frame(doctor, bg='white')
+    content_area.pack(fill='both', expand=True)
 
-    # Create a Frame for the sidebar
-    sidebar = Frame(doctor, width=200, bg="lavender")
-    sidebar.pack(fill=Y, side=LEFT)
-
-    # Load and display the logo
-    logo_image = PhotoImage(file="cad1.png")
-    logo_label = Label(sidebar, image=logo_image, bg="lavender")
-    logo_label.pack(pady=10, padx=10)
-
-    # Main content area
-    content_area = Frame(doctor, bg="white", padx=20, pady=20)
-    content_area.pack(expand=True, fill="both", side=RIGHT)
-
-    # Create buttons for navigation in the sidebar
-    create_button("Clock In Out", clock_in_out)
-    create_button("Appointment", check_appointment)
-    create_button("Log Out", log_out)
+    create_nav_button("Home", open_home_page)
+    create_nav_button("Clock In Out", clock_in_out)
+    create_nav_button("Appointment", check_appointment)
+    create_nav_button("Log Out", log_out)
 
     open_home_page()
-
-    # Start the main loop
     doctor.mainloop()
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: python doctor_web.py <username>")
+    username = os.getenv('USERNAME')
+    if not username:
+        print("Error: USERNAME environment variable not set")
+        sys.exit(1)
 
-    username = sys.argv[1]
     doctor_website(username)
