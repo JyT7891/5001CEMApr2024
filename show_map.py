@@ -10,29 +10,28 @@ from fire_base import getClient, initializeFirebase
 conn = initializeFirebase()
 db = getClient()
 
-
 def getClinicName(clinic_id):
+    """Fetch the clinic name from the database using the clinic ID."""
     try:
-        # Fetch clinic document using clinic ID
         clinic_doc = db.collection('clinic').document(clinic_id).get()
         if clinic_doc.exists:
             clinic_data = clinic_doc.to_dict()
             return clinic_data.get('name')
         else:
-            messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
             return None
     except Exception as e:
-        messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        print(f"Error fetching clinic name: {str(e)}")
         return None
 
-
 def show_location(clinic_id):
+    """Show the location of the clinic on the map."""
     if not clinic_id:
         messagebox.showwarning("Input Error", "Please enter a clinic ID.")
         return
 
     clinic_name = getClinicName(clinic_id)
     if not clinic_name:
+        messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
         return
 
     geolocator = Nominatim(user_agent="clinic_locator")
@@ -46,16 +45,15 @@ def show_location(clinic_id):
     else:
         messagebox.showerror("Geocoding Error", "Could not find location for the clinic.")
 
-
 def book_now_and_close(clinic_id, username):
+    """Book the appointment and close the map window."""
     clinic_map.destroy()
     run_script1("user_appointment.py", clinic_id, username)
 
-
 def cancel_book(username):
+    """Cancel the booking and close the map window."""
     clinic_map.destroy()
     run_script1("user_home_page.py", username)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -65,6 +63,7 @@ if __name__ == "__main__":
     clinic_id = sys.argv[1]
     username = sys.argv[2]
 
+    # Create the main window
     clinic_map = tk.Tk()
     clinic_map.title("Clinic Locator")
 
@@ -72,8 +71,10 @@ if __name__ == "__main__":
     if clinic_name:
         tk.Label(clinic_map, text=f"Clinic ID : {clinic_name}", font=('Helvetica', 25, 'bold')).pack(pady=10)
     else:
+        messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
         sys.exit(1)
 
+    # Buttons for booking and canceling
     book_now = tk.Button(clinic_map, text="Book Now", font=('Helvetica', 10),
                          command=lambda: book_now_and_close(clinic_id, username))
     book_now.pack(pady=5)
@@ -81,8 +82,10 @@ if __name__ == "__main__":
     cancel = tk.Button(clinic_map, text="Cancel Book", font=('Helvetica', 10), command=lambda: cancel_book(username))
     cancel.pack(pady=5)
 
+    # Map widget
     map_widget = TkinterMapView(clinic_map, width=600, height=400)
     map_widget.pack(pady=20)
 
+    # Show the clinic location on the map
     show_location(clinic_id)
     clinic_map.mainloop()
