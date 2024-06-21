@@ -1,7 +1,9 @@
 import tkinter as tk
+from datetime import datetime
 from tkinter import messagebox
 from tkinter.ttk import Combobox
 from tkcalendar import Calendar
+from firebase_admin import firestore
 from fire_base import getClient, initializeFirebase
 from run_script import run_script1
 import sys
@@ -11,6 +13,7 @@ conn = initializeFirebase()
 db = getClient()
 
 
+# Function to submit appointment
 def submit_appointment():
     doctor = doctor_var.get()
     date = calendar.get_date()
@@ -20,24 +23,58 @@ def submit_appointment():
         messagebox.showerror("Invalid Input", "Please select a doctor and a time.")
         return
 
-    appointment = {
-        "doc_id": doctor,
-        "date": date,
-        "time": time
-    }
+    # Validate date and time
+    if not validate_datetime():
+        return
 
-    # Save appointment to Firebase
-    db.collection('appointments').add(appointment)
+    try:
+        # Fetch doctor document based on the selected doctor's name
+        doctor_query = db.collection('doctor').where('doc_name', '==', doctor).limit(1).get()
+        doctor_id = None
 
-    messagebox.showinfo("Appointment Added", f"Appointment with {doctor} on {date} at {time} added.")
+        for doc in doctor_query:
+            doctor_id = doc.id
+            clinic_id = doc.to_dict().get('clinic_id')
+            break  # Assuming there's only one doctor with a given name, break after finding it
 
-    # Clear the inputs
-    doctor_var.set('')
-    time_var.set('')
+        if not doctor_id:
+            messagebox.showerror("Error", f"Doctor '{doctor}' not found.")
+            return
+        
+        # Construct the appointment data
+        appointment_data = {
+            "clinic_name": clinic_id,  # Assuming clinic_id is defined elsewhere
+            'patient_name': username,
+            "doc_id": doctor,
+            "date": date,
+            "time": time
+        }
+
+        # Save appointment to Firestore under 'username' (replace with actual username)
+        user_doc_ref = db.collection('user').document(username)
+        user_doc_ref.update({
+            'appointments': firestore.ArrayUnion([appointment_data])
+        })
+
+        # Save appointment to doctor's appointment list
+        doctor_doc_ref = db.collection('doctor').document(doctor_id)
+        doctor_doc_ref.update({
+            'appointments': firestore.ArrayUnion([appointment_data])
+        })
+
+        # Show success message
+        messagebox.showinfo("Appointment Added", f"Appointment with {doctor} on {date} at {time} added successfully.")
+
+        back()
+
+    except Exception as e:
+        # Show error message if any exception occurs
+        messagebox.showerror("Error", f"Failed to add appointment: {e}")
 
 
 def back():
-    run_script1("user_home_page.py")
+    clinic.destroy()
+    run_script1("user_home_page.py", username)
 
 
 def getDoctorByClinicID(clinic_id):
@@ -52,16 +89,56 @@ def getDoctorByClinicID(clinic_id):
         return []
 
 
+def getClinicName(clinic_id):
+    try:
+        # Fetch clinic document using clinic ID
+        clinic_doc = db.collection('clinic').document(clinic_id).get()
+        if clinic_doc.exists:
+            clinic_data = clinic_doc.to_dict()
+            return clinic_data.get('name')
+        else:
+            messagebox.showerror("Clinic Not Found", "No clinic found with the specified ID.")
+            return None
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        return None
 
-def main():
+
+# Function to validate date and time
+def validate_datetime():
+    selected_date = calendar.get_date()
+    selected_time = time_var.get()
+
+    # Convert selected date and time to datetime objects
+    selected_datetime = datetime.strptime(f"{selected_date} {selected_time}", "%Y-%m-%d %H:%M")
+
+    # Get current date and time
+    current_datetime = datetime.now()
+
+    # Check if selected datetime is in the past
+    if selected_datetime < current_datetime:
+        tk.messagebox.showerror("Invalid Selection", "Please select a future date and time.")
+        return False
+    else:
+        return True
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python show_map.py <clinic_id>")
+        sys.exit(1)
+    clinic_id = sys.argv[1]
+    username = sys.argv[2]
+
     # Create the main Tkinter window
     clinic = tk.Tk()
     clinic.minsize(700, 600)
     clinic.resizable(False, False)
-    clinic.title("Clinic Name")
+    clinic.title(getClinicName(clinic_id))
 
     # Clinic name label
-    clinic_name_label = tk.Label(clinic, text="Clinic Name", font=('Helvetica', 25, 'bold'))
+    clinic_name_label = tk.Label(clinic, text=f"Clinic Name : {getClinicName(clinic_id)}",
+                                 font=('Helvetica', 15, 'bold'))
     clinic_name_label.place(x=250, y=50)
 
     # Doctor list label and dropdown
@@ -108,11 +185,3 @@ def main():
     cancel_button.place(x=350, y=500)
 
     clinic.mainloop()
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python show_map.py <clinic_id>")
-        sys.exit(1)
-    clinic_id = sys.argv[1]
-    main()

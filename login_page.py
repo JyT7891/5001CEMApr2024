@@ -12,8 +12,6 @@ db = getClient()
 
 # Create the main Tkinter window
 patient_login = tk.Tk()
-
-# y,x
 patient_login.minsize(1000, 790)
 patient_login.resizable(False, False)
 patient_login.title("Login")
@@ -21,17 +19,19 @@ patient_login.title("Login")
 # Load and display an image
 image = Image.open('CAD.png')
 image = ImageTk.PhotoImage(image)
-
 image_label = tk.Label(patient_login, image=image)
 image_label.place(x=220, y=-180)
 
 
-# Function to check if an email exists in Firestore
 def email_exists_in_firestore(username1):
     try:
-        doc_ref = db.collection('user').document(username1)  # Adjust the path as per your Firestore structure
+        # search in user database
+        doc_ref = db.collection('user').document(username1)
         doc = doc_ref.get()
-        return doc.exists
+        # search in doctor database
+        doc1_ref = db.collection('user').document(username1)
+        doc1 = doc1_ref.get()
+        return doc.exists, doc1.exists
     except Exception as e:
         print(f"An error occurred: {e}")
         return False
@@ -39,48 +39,48 @@ def email_exists_in_firestore(username1):
 
 def password_matches(username1, password):
     try:
-        doc_ref = db.collection('user').document(username1)  # Adjust the path as per your Firestore structure
+        doc_ref = db.collection('user').document(username1)
         doc = doc_ref.get()
         if doc.exists:
             user_data = doc.to_dict()
-            # Close the current Tkinter window
-            patient_login.destroy()
-            messagebox.showinfo("Login Successful", "Login successful!")
-            return user_data.get('password') == password
-        else:
-            doc_ref = db.collection('doctor').document(username1)  # Adjust the path as per your Firestore structure
-            doc = doc_ref.get()
-            if doc.exists:
-                user_data = doc.to_dict()
-                # Close the current Tkinter window
-                patient_login.destroy()
-                run_script1('doctor_web.py')
-                messagebox.showinfo("Login Successful", "Login successful!")
-                return user_data.get('password') == password
+            if user_data.get('password') == password:
+                return "user", username1
+        # Check if user exists in 'doctor' collection
+        doc_ref = db.collection('doctor').document(username1)
+        doc = doc_ref.get()
+        if doc.exists:
+            user_data = doc.to_dict()
+            if user_data.get('password') == password:
+                return "doctor", username1
+        return None, None
     except Exception as e:
         print(f"An error occurred: {e}")
-        return False
+        return None, None
 
 
-# Function to handle login process
 def check_login(event=None):
     username1 = insert_username.get()
     password = insert_password.get()
 
     if email_exists_in_firestore(username1):
-        if password_matches(username1, password):
-            run_script1('user_home_page.py', username1)
+        user_type, user_id = password_matches(username1, password)
+        if user_type and user_id:
+            if user_type == "user":
+                messagebox.showinfo("Login Successful", "Login successful!")
+                patient_login.destroy()
+                run_script1('user_home_page.py', user_id)
+            elif user_type == "doctor":
+                messagebox.showinfo("Login Successful", "Login successful!")
+                patient_login.destroy()
+                run_script1('doctor_web.py', user_id)
         else:
             messagebox.showerror("Login Failed", "Incorrect username or password.")
     else:
         messagebox.showerror("Login Failed", "Email does not exist. Please sign up.")
 
 
-# Function to handle sign-up process
 def check_sign_up():
-    # Close the current Tkinter window
     patient_login.destroy()
-    # Call the function to run the script
     run_script1('sign_up.py')
 
 

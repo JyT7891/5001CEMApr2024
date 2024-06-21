@@ -1,6 +1,7 @@
 import subprocess
 import os
 import sys
+from tkinter import messagebox
 
 
 def run_script1(script_name, *args):
@@ -24,6 +25,20 @@ def run_script1(script_name, *args):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
+def show_clinic_patient(script_name, clinic_id, patient_name):
+    python_executable = os.path.join(os.getcwd(), '.venv', 'Scripts', 'python.exe')
+    script_path = os.path.join(os.getcwd(), script_name)
+
+    try:
+        command = [python_executable, script_path, clinic_id, patient_name]
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            messagebox.showerror("Error", f"Failed to run {script_name}:\n{result.stderr}")
+        else:
+            print(f"Output:\n{result.stdout}")
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
 
 
 if __name__ == "__main__":

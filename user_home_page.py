@@ -4,7 +4,7 @@ from tkinter import messagebox
 from tkinter import *
 from PIL import Image, ImageTk
 from fire_base import initializeFirebase, getClient
-from run_script import run_script1
+from run_script import run_script1, show_clinic_patient
 
 
 def initialize_home_page(username):
@@ -99,10 +99,10 @@ def initialize_home_page(username):
         text.pack(pady=10)
         clinics = fetch_clinics_from_firebase()
 
-        def button_command(clinic_id):
+        def button_command(clinic_id, username):
             home_page.withdraw()
-            messagebox.showinfo("Test", f"{clinic_id}")
-            run_script1('show_map.py', clinic_id)
+            messagebox.showinfo("Test", f"{clinic_id} \n {username}")
+            show_clinic_patient('show_map.py', clinic_id, username)
 
         canvas = Canvas(content_area, bg="white")
         scrollbar = Scrollbar(content_area, orient="vertical", command=canvas.yview)
@@ -133,7 +133,8 @@ def initialize_home_page(username):
             close_time_label = Label(clinic_frame, text=f"Close Time: {clinic['close_time']}", font=('Helvetica', 12),
                                      bg="#f0f0f0", fg='#07497d')
             close_time_label.pack(anchor="w", pady=2)
-            clinic_frame.bind("<Button-1>", lambda event, clinic_id=clinic['clinic_id']: button_command(clinic_id))
+            clinic_frame.bind("<Button-1>",
+                              lambda event, clinic_id=clinic['clinic_id']: button_command(clinic_id, username))
             clinic_frame.pack_propagate(False)
 
     def open_profile():
@@ -258,43 +259,6 @@ def initialize_home_page(username):
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
-
-    def contact_us():
-        clear_content()
-
-        contact_heading = Label(content_area, text="Contact Us", font=('Helvetica', 25, 'bold'), bg='white')
-        contact_heading.pack(pady=20)
-
-        contact_frame = Frame(content_area, bg="white", padx=20, pady=20)
-        contact_frame.pack()
-
-        # Labels and Entries for Name, Email, and Message
-        Label(contact_frame, text="Name          : ", font=('Helvetica', 12), bg='white').grid(row=0, column=0, padx=10,
-                                                                                               pady=10)
-        name_entry = Entry(contact_frame, font=('Helvetica', 12), width=30)
-        name_entry.grid(row=0, column=1, padx=10, pady=10)
-
-        Label(contact_frame, text="Email          : ", font=('Helvetica', 12), bg='white').grid(row=1, column=0,
-                                                                                                padx=10, pady=10)
-        email_entry = Entry(contact_frame, font=('Helvetica', 12), width=30)
-        email_entry.grid(row=1, column=1, padx=10, pady=10)
-
-        Label(contact_frame, text="Message   : ", font=('Helvetica', 12), bg='white').grid(row=2, column=0, padx=10,
-                                                                                           pady=10)
-        message_entry = Text(contact_frame, font=('Helvetica', 12), width=50, height=10)
-        message_entry.grid(row=2, column=1, padx=10, pady=10)
-
-        # Submit Button Functionality
-        def submit_message():
-            name = name_entry.get()
-            email = email_entry.get()
-            message = message_entry.get("1.0", "end").strip()
-
-            # Here you can implement further actions like sending an email or saving to database
-            messagebox.showinfo("Contact Us", "Message Submitted Successfully")
-
-        submit_button = Button(contact_frame, text="Submit", command=submit_message, font=('Helvetica', 12))
-        submit_button.grid(row=3, columnspan=2, pady=20)
 
     def log_out():
         # Clear the content area
