@@ -21,6 +21,7 @@ image = ImageTk.PhotoImage(image)
 image_label = tk.Label(patient_login, image=image)
 image_label.place(x=220, y=-180)
 
+
 def email_exists_in_firestore(username):
     try:
         user_doc = db.collection('user').document(username).get()
@@ -29,6 +30,7 @@ def email_exists_in_firestore(username):
     except Exception as e:
         print(f"An error occurred: {e}")
         return False
+
 
 def password_matches(username, password):
     try:
@@ -42,6 +44,7 @@ def password_matches(username, password):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None, None
+
 
 def check_login(event=None):
     username = insert_username.get()
@@ -62,9 +65,11 @@ def check_login(event=None):
     else:
         messagebox.showerror("Login Failed", "Email does not exist. Please sign up.")
 
+
 def check_sign_up():
     patient_login.destroy()
     run_script1('sign_up.py')
+
 
 def login_page():
     global insert_username, insert_password
@@ -77,14 +82,18 @@ def login_page():
     insert_password = tk.Entry(patient_login, width=30, show="*", font='Arial 19')
     insert_password.place(x=380, y=410)
 
-    tk.Button(patient_login, text="Sign Up", height=2, width=15, font=('Arial', 20), command=check_sign_up).place(x=230, y=510)
-    tk.Button(patient_login, text="Login", height=2, width=15, font=('Arial', 20), command=check_login).place(x=500, y=510)
+    tk.Button(patient_login, text="Sign Up", height=2, width=15, font=('Arial', 20), command=check_sign_up).place(x=230,
+                                                                                                                  y=510)
+    tk.Button(patient_login, text="Login", height=2, width=15, font=('Arial', 20), command=check_login).place(x=500,
+                                                                                                              y=510)
 
     patient_login.bind("<Return>", check_login)
+
 
 def main():
     login_page()
     patient_login.mainloop()
+
 
 if __name__ == '__main__':
     main()
