@@ -1,11 +1,11 @@
 from datetime import datetime
+import calendar
 from tkinter import *
 import tkinter as tk
 import PIL
 from PIL import Image, ImageTk
 from tkinter.ttk import Combobox
 from tkinter import messagebox
-import subprocess
 from fire_base import getClient, initializeFirebase
 from run_script import run_script1
 
@@ -26,8 +26,6 @@ image_label.place(x=220, y=-180)
 
 
 def check_sign_up():
-    # Import the function from run_script.py
-    from run_script import run_script1
     calculate()
 
     # Get the values from the entry fields
@@ -41,7 +39,7 @@ def check_sign_up():
     day = day1
     age = age1
 
-    # if all correct
+    # Initialize Firebase connection
     conn = initializeFirebase()
     db = getClient()
 
@@ -55,23 +53,21 @@ def check_sign_up():
         'bloodType': blood,
         'year': year,
         'month': month,
-        'day': day
+        'day': day,
+        'userType': 'user'  # Set the default user type to 'user'
     })
 
     messagebox.showinfo("Success", "Sign up successful!")
     patient_sign_up.destroy()
-    # Call the function to run the script
     run_script1('login_page.py')
 
 
 def call_back():
     patient_sign_up.destroy()
-    # Call the function to run the script
     run_script1('login_page.py')
 
 
 def sign():
-    # username, name, password, gender, age, blood type
     global insert_username, insert_name, insert_password, gender_type_combobox, blood_type_var
     username = Label(patient_sign_up, text="Username         :", font=('Arial', 20))
     username.place(x=150, y=180)
@@ -115,56 +111,75 @@ def sign():
     cancel.place(x=200, y=690)
 
 
-# Function to generate years dynamically
 def generate_years():
     current_year = datetime.now().year
-    return [str(year) for year in
-            range(current_year, current_year - 100, -1)]  # Generate years from current year to 100 years ago
+    return [str(year) for year in range(current_year, current_year - 100, -1)]
 
 
 def date_of_birth():
-    global year_var, month_var, day_var
+    global year_var, month_var, day_var, day_combobox
+    # Labels
+    year_label = Label(patient_sign_up, text="Year:", font=('Arial', 16))
+    year_label.place(x=320, y=260)
+    month_label = Label(patient_sign_up, text="Month:", font=('Arial', 16))
+    month_label.place(x=480, y=260)
+    day_label = Label(patient_sign_up, text="Day:", font=('Arial', 16))
+    day_label.place(x=620, y=260)
+
     # Years Dropdown List (Combobox)
-    years = list(range(1900, datetime.now().year + 1))  # Assuming birth years can start from 1900
+    years = list(range(1900, datetime.now().year + 1))
     year_var = tk.StringVar()
     year_combobox = Combobox(patient_sign_up, textvariable=year_var, values=years, state="readonly", width=5,
                              font=('Arial', 16))
     year_combobox.place(x=380, y=260)
-    year_combobox.current(len(years) - 1)  # Select the last item by default (current year)
+    year_combobox.current(len(years) - 1)
+    year_combobox.bind("<<ComboboxSelected>>", update_days)
 
     # Months Dropdown List (Combobox)
-    months = list(range(1, 13))  # Months from 1 to 12
+    months = list(range(1, 13))
     month_var = tk.StringVar()
     month_combobox = Combobox(patient_sign_up, textvariable=month_var, values=months, state="readonly", width=3,
                               font=('Arial', 16))
     month_combobox.place(x=540, y=260)
-    month_combobox.current(0)  # Select the first item by default (January)
+    month_combobox.current(0)
+    month_combobox.bind("<<ComboboxSelected>>", update_days)
 
     # Days Dropdown List (Combobox)
-    days = list(range(1, 32))  # Days from 1 to 31
+    days = list(range(1, 32))
     day_var = tk.StringVar()
     day_combobox = Combobox(patient_sign_up, textvariable=day_var, values=days, state="readonly", width=3,
                             font=('Arial', 16))
     day_combobox.place(x=680, y=260)
-    day_combobox.current(0)  # Select the first item by default (1st day)
+    day_combobox.current(0)
+
+
+def update_days(event):
+    year = int(year_var.get())
+    month = int(month_var.get())
+
+    if month == 0:
+        month = 1
+
+    days_in_month = calendar.monthrange(year, month)[1]
+    days = list(range(1, days_in_month + 1))
+    day_combobox['values'] = days
+    if int(day_var.get()) not in days:
+        day_combobox.current(0)  # Set to the first day if the current day is not valid
 
 
 def calculate():
     global year1, month1, day1, age1
     try:
-        # Get selected year, month, and day
         year1 = int(year_var.get())
         month1 = int(month_var.get())
         day1 = int(day_var.get())
 
-        # Calculate age
         birth_date = datetime(year1, month1, day1)
         current_date = datetime.now()
 
         age1 = current_date.year - birth_date.year - (
                 (current_date.month, current_date.day) < (birth_date.month, birth_date.day))
 
-        # Print or update age in the database
         print(f"Calculated Age: {age1}")
 
     except ValueError:
