@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 from fire_base import initializeFirebase, getClient
 from run_script import run_script1
 
+
 def initialize_home_page():
     username = os.getenv('USERNAME')  # Retrieve the username from the environment variable
 
@@ -14,7 +15,7 @@ def initialize_home_page():
         sys.exit(1)
 
     home_page = Tk()
-    home_page.minsize(1250, 790)
+    home_page.minsize(1300, 790)
     home_page.resizable(False, False)
     home_page.title(f"Call A Doctor - {username}")
 
@@ -201,9 +202,16 @@ def initialize_home_page():
         canvas.pack(side=LEFT, fill=BOTH, expand=True)
         scrollbar.pack(side=RIGHT, fill=Y)
 
-        for appointment in appointments:
-            appointment_frame = Frame(scrollable_frame, bd=1, relief="solid", padx=10, pady=10, bg="#f0f0f0")
-            appointment_frame.pack(padx=10, pady=10, fill='x')
+        frame_width = 300
+        frame_height = 150
+        num_columns = 3
+
+        for idx, appointment in enumerate(appointments):
+            row = idx // num_columns
+            column = idx % num_columns
+            appointment_frame = Frame(scrollable_frame, bd=0, relief="groove", padx=10, pady=10, bg="#f0f0f0",
+                                      width=frame_width, height=frame_height)
+            appointment_frame.grid(row=row, column=column, padx=10, pady=10, sticky="nsew")
 
             clinic_label = Label(appointment_frame, text=f"Clinic: {appointment['clinic_name']}",
                                  font=('Helvetica', 15, 'bold'), bg="#f0f0f0", fg='#07497d')
@@ -218,11 +226,136 @@ def initialize_home_page():
                               bg="#f0f0f0", fg='#07497d')
             doc_label.pack(anchor="w")
 
-            details_button = Button(appointment_frame, text="View Details", command=lambda a=appointment: view_details(a))
+            details_button = Button(appointment_frame, text="View Details",
+                                    command=lambda a=appointment: view_details(a))
             details_button.pack(side=LEFT, padx=10, pady=5)
 
-            cancel_button = Button(appointment_frame, text="Cancel", command=lambda a=appointment: cancel_appointment(a))
+            cancel_button = Button(appointment_frame, text="Cancel",
+                                   command=lambda a=appointment: cancel_appointment(a))
             cancel_button.pack(side=LEFT, padx=10, pady=5)
+
+    def open_profile():
+        # Clear the content area
+        clear_content()
+
+        profile_frame = Frame(content_area, background='white')
+        profile_frame.pack(padx=50, pady=20)
+
+        profile_label = Label(profile_frame, text="Profile", font=('Helvetica', 30, 'bold'), background='white')
+        profile_label.pack()
+
+        # Fetch patient data from the database
+        try:
+            doc = db.collection('user').document(username).get()
+            if doc.exists:
+                patient_info = doc.to_dict()
+            else:
+                patient_info = {'username': 'N/A', 'age': 'N/A', 'email': 'N/A', 'password': 'N/A', 'blood_type': 'N/A'}
+
+            profile_data_frame = Frame(profile_frame, background='white')
+            profile_data_frame.pack(padx=20, pady=20)
+
+            # Labels for non-editable fields
+            Label(profile_data_frame, text="Username       : ", font=('Helvetica', 15), bg='white').grid(row=0,
+                                                                                                         column=0,
+                                                                                                         sticky='w',
+                                                                                                         padx=5,
+                                                                                                         pady=5)
+            Label(profile_data_frame, text=patient_info['username'], font=('Helvetica', 15), bg='white').grid(row=0,
+                                                                                                              column=1,
+                                                                                                              sticky='w',
+                                                                                                              padx=5,
+                                                                                                              pady=5)
+
+            Label(profile_data_frame, text="Name              : ", font=('Helvetica', 15), bg='white').grid(row=1,
+                                                                                                            column=0,
+                                                                                                            sticky='w',
+                                                                                                            padx=5,
+                                                                                                            pady=5)
+            name_entry = Entry(profile_data_frame, font=('Helvetica', 15), width=15)
+            name_entry.grid(row=1, column=1, padx=5, pady=5)
+            name_entry.insert(0, patient_info['name'])
+
+            Label(profile_data_frame, text="Gender           : ", font=('Helvetica', 15), bg='white').grid(row=2,
+                                                                                                           column=0,
+                                                                                                           sticky='w',
+                                                                                                           padx=5,
+                                                                                                           pady=5)
+            Label(profile_data_frame, text=patient_info['gender'], font=('Helvetica', 15), bg='white').grid(row=2,
+                                                                                                            column=1,
+                                                                                                            sticky='w',
+                                                                                                            padx=5,
+                                                                                                            pady=5)
+
+            Label(profile_data_frame, text="Blood Type     : ", font=('Helvetica', 15), bg='white').grid(row=3,
+                                                                                                         column=0,
+                                                                                                         sticky='w',
+                                                                                                         padx=5,
+                                                                                                         pady=5)
+            Label(profile_data_frame, text=patient_info['bloodType'], font=('Helvetica', 15), bg='white').grid(row=3,
+                                                                                                               column=1,
+                                                                                                               sticky='w',
+                                                                                                               padx=5,
+                                                                                                               pady=5)
+
+            # Age Label and Value
+            Label(profile_data_frame, text="Age                : ", font=('Helvetica', 15), bg='white').grid(row=4,
+                                                                                                             column=0,
+                                                                                                             sticky='w',
+                                                                                                             padx=5,
+                                                                                                             pady=5)
+            Label(profile_data_frame, text=patient_info['age'], font=('Helvetica', 15), bg='white').grid(row=4,
+                                                                                                         column=1,
+                                                                                                         sticky='w',
+                                                                                                         padx=5,
+                                                                                                         pady=5)
+
+            # Date of Birth Labels and Values
+            Label(profile_data_frame, text="Date of Birth   : ", font=('Helvetica', 15), bg='white').grid(row=5,
+                                                                                                          column=0,
+                                                                                                          sticky='w',
+                                                                                                          padx=5,
+                                                                                                          pady=5)
+
+            birth_date_str = f"{patient_info['year']} / {patient_info['month']} / {patient_info['day']}"
+            Label(profile_data_frame, text=birth_date_str, font=('Helvetica', 15), bg='white').grid(row=5,
+                                                                                                    column=1,
+                                                                                                    sticky='w',
+                                                                                                    padx=5,
+                                                                                                    pady=5)
+
+            # Entry fields for editable fields
+            Label(profile_data_frame, text="Password       : ", font=('Helvetica', 15), bg='white').grid(row=6,
+                                                                                                         column=0,
+                                                                                                         sticky='w',
+                                                                                                         padx=5,
+                                                                                                         pady=5)
+            password_entry = Entry(profile_data_frame, font=('Helvetica', 15), width=15)
+            password_entry.grid(row=6, column=1, padx=5, pady=5)
+            password_entry.insert(0, patient_info['password'])
+
+            def update_profile():
+                new_name = name_entry.get()
+                new_password = password_entry.get()
+
+                # Update the profile data
+                updated_data = {
+                    'name': new_name,
+                    'password': new_password
+                }
+
+                # Update the profile in Firebase
+                try:
+                    db.collection('user').document(username).update(updated_data)
+                    messagebox.showinfo("Update", "Profile updated successfully")
+                except Exception as e:
+                    messagebox.showerror("Error", f"An error occurred: {e}")
+
+            update_button = Button(profile_frame, text="Update Profile", command=update_profile, font=('Helvetica', 12))
+            update_button.pack(pady=20)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
 
     def clear_content():
         for widget in content_area.winfo_children():
@@ -236,7 +369,7 @@ def initialize_home_page():
 
     def logout():
         home_page.destroy()  # Destroy the main window
-        # You can add code here to redirect to the login page or exit the application
+        run_script1('login_page.py')
 
     nav_frame = Frame(home_page, width=200, bg='#2a2a2a')
     nav_frame.pack(fill='y', side='left')
@@ -246,7 +379,7 @@ def initialize_home_page():
 
     # Load and display the logo
     logo_image = PhotoImage(file="cad1.png")
-    logo_label = Label(nav_frame, image=logo_image, bg="#ADD8E6")
+    logo_label = Label(nav_frame, image=logo_image, bg="#2a2a2a")
     logo_label.pack(pady=20)
 
     # Button definitions with padding and increased space
@@ -275,6 +408,12 @@ def initialize_home_page():
     appointments_btn.bind("<Enter>", on_enter)
     appointments_btn.bind("<Leave>", on_leave)
 
+    profile_btn = Button(nav_frame, text="Profile", font=('Helvetica', 20), fg='white', bg='#2a2a2a',
+                              command=open_profile, relief='flat')
+    profile_btn.pack(fill='x', padx=20, pady=20)  # Increased padx and pady
+    profile_btn.bind("<Enter>", on_enter)
+    profile_btn.bind("<Leave>", on_leave)
+
     # Logout button
     logout_btn = Button(nav_frame, text="Logout", font=('Helvetica', 20), fg='white', bg='#2a2a2a',
                         command=logout, relief='flat')
@@ -287,6 +426,7 @@ def initialize_home_page():
 
     # Start the Tkinter main loop
     home_page.mainloop()
+
 
 if __name__ == "__main__":
     initialize_home_page()

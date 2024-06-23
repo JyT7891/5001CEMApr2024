@@ -10,6 +10,7 @@ from fire_base import getClient, initializeFirebase
 conn = initializeFirebase()
 db = getClient()
 
+
 def getClinicName(clinic_id):
     """Fetch the clinic name from the database using the clinic ID."""
     try:
@@ -22,6 +23,7 @@ def getClinicName(clinic_id):
     except Exception as e:
         print(f"Error fetching clinic name: {str(e)}")
         return None
+
 
 def show_location(clinic_id):
     """Show the location of the clinic on the map."""
@@ -45,15 +47,18 @@ def show_location(clinic_id):
     else:
         messagebox.showerror("Geocoding Error", "Could not find location for the clinic.")
 
+
 def book_now_and_close(clinic_id, username):
     """Book the appointment and close the map window."""
     clinic_map.destroy()
     run_script1("user_appointment.py", clinic_id, username)
 
+
 def cancel_book(username):
     """Cancel the booking and close the map window."""
     clinic_map.destroy()
     run_script1("user_home_page.py", username)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

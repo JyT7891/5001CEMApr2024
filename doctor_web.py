@@ -65,9 +65,9 @@ def doctor_website(username):
     def check_appointment():
         clear_content()
 
-        def check_appointment_button():
+        def check_appointment_button(index):
             doctor.destroy()
-            run_script1('patient_report.py', username)
+            run_script1('patient_report.py', username, index)
 
         try:
             doctor_ref = db.collection('doctor').document(username).get()
@@ -117,7 +117,7 @@ def doctor_website(username):
                         doctor_label.pack(anchor="w", pady=2)
 
                         appointment_frame.bind("<Button-1>",
-                                               lambda event, app=appointment_data: check_appointment_button())
+                                               lambda event, index=idx: check_appointment_button(index))
                         appointment_frame.pack_propagate(False)
                 else:
                     label = Label(content_area, text="No appointments found.", font=('Helvetica', 12))
