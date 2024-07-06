@@ -24,7 +24,8 @@ image_label.place(x=220, y=-180)
 def email_exists_in_firestore(username):
     try:
         user_doc = db.collection('user').document(username).get()
-        return user_doc.exists
+        doctor_doc = db.collection('doctor').document(username).get()
+        return user_doc.exists or doctor_doc.exists
     except Exception as e:
         print(f"An error occurred: {e}")
         return False
@@ -36,6 +37,11 @@ def password_matches(username, password):
             user_data = doc.to_dict()
             if user_data.get('password') == password:
                 return user_data.get('userType'), username
+        doc = db.collection('doctor').document(username).get()
+        if doc.exists:
+            user_data = doc.to_dict()
+            if user_data.get('password') == password:
+                return "doctor", username
         return None, None
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -53,6 +59,8 @@ def check_login(event=None):
             patient_login.destroy()
             if user_type == "user":
                 run_script1('user_home_page.py')
+            elif user_type == "doctor":
+                run_script1('doctor_web.py')
             elif user_type == "admin":
                 run_script1('clinic_web.py')
             else:
